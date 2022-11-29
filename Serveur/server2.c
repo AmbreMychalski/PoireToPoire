@@ -111,12 +111,13 @@ static void app(void)
                {
                   closesocket(clients[i].sock);
                   remove_client(clients, i, &actual);
-                  strncpy(buffer, client.name, BUF_SIZE - 1);
+                  strncpy(buffer, client.name, BUF_SIZE - 1);                 
                   strncat(buffer, " disconnected !", BUF_SIZE - strlen(buffer) - 1);
                   send_message_to_all_clients(clients, client, actual, buffer, 1);
                }
                else
                {
+                  printf("%s : %s \n",client.name, buffer);
                   send_message_to_all_clients(clients, client, actual, buffer, 0);
                }
                break;
@@ -153,6 +154,7 @@ static void send_message_to_all_clients(Client *clients, Client sender, int actu
    message[0] = 0;
    for(i = 0; i < actual; i++)
    {
+      strcpy(message,"");
       /* we don't send message to the sender */
       if(sender.sock != clients[i].sock)
       {
