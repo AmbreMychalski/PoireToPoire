@@ -28,7 +28,7 @@ static void end(void)
 
 static void app(void)
 {
-   SOCKET sock = init_connection();
+   SOCKET sock = init_connection();  // ouvre une interface réseau sur un port en particulier pour dire au serveur c'est ici que les clients se connecteront
    char buffer[BUF_SIZE];
    /* the index for the array */
    int actual = 0;
@@ -64,12 +64,12 @@ static void app(void)
       /* something from standard input : i.e keyboard */
       if(FD_ISSET(STDIN_FILENO, &rdfs))
       {
-         /* stop process when type on keyboard */
+         /* stop process when type on keyboard on the server*/
          break;
       }
       else if(FD_ISSET(sock, &rdfs))
       {
-         /* new client */
+         /* new client sur le port ouvert de l'interface*/
          SOCKADDR_IN csin = { 0 };
          size_t sinsize = sizeof csin;
          int csock = accept(sock, (SOCKADDR *)&csin, &sinsize);
