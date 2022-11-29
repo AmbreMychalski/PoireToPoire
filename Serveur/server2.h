@@ -30,10 +30,14 @@ typedef struct in_addr IN_ADDR;
 #define CRLF        "\r\n"
 #define PORT         1977
 #define MAX_CLIENTS     100
+#define MAX_MEM_GROUP     20
 
 #define BUF_SIZE    1024
 
 #include "client2.h"
+#include "group.h"
+#include "message.h"
+#include "conversation.h"
 
 static void init(void);
 static void end(void);
