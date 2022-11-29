@@ -1,11 +1,12 @@
 TARGET=client server 
 CC=gcc
-CFLAGS= -Wall -Wextra -g
+CFLAGS=
 
-normal: $(TARGET)
-client: client2.c
-    $(CC) $(CFLAGS) ./Client/client2.c -o client
-server: server2.c
-    $(CC) $(CFLAGS) ./Server/server2.c -o server
+all: client server
+
+client: ./Client/client2.c
+	$(CC) $(CFLAGS) ./Client/client2.c -o client
+server: ./Serveur/server2.c
+	$(CC) $(CFLAGS) ./Serveur/server2.c -o server
 clean:
-    $(RM) $(TARGET)
+	$(RM) $(TARGET)
