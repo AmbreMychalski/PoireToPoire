@@ -33,9 +33,10 @@ static void app(void)
    /* the index for the array */
    int actual = 0;
    int max = sock;
+   int nbConversations = 0;
    /* an array for all clients */
    Client clients[MAX_CLIENTS];
-
+   Conversation *conversations = (Conversation *) malloc(100*sizeof(Conversation));
    fd_set rdfs;
 
    while(1)
@@ -169,6 +170,50 @@ static void send_message_to_all_clients(Client *clients, Client sender, int actu
    }
 }
 
+static void send_message_to_conversation(Conversation* listConversation, const char* senderName, const char* receiverName, 
+                                          const char *buffer, Client*clients, int * nbConversations, int nbClient){
+   // vérifier si la conversation existe déjà
+   int exist = 0;
+   int i=0;
+   Conversation *convActuelle;
+
+   Client *conversationClientA;
+   Client *conversationClientB;
+   while(i<(*nbConversations) && exist==0){
+      conversationClientA=(listConversation[i].clientA);
+      conversationClientB=(listConversation[i].clientB);
+      if((strcmp(senderName, conversationClientA->name)==0 && strcmp(receiverName, conversationClientB->name)==0) 
+      || (strcmp(senderName, conversationClientB->name)==0 && strcmp(receiverName, conversationClientA->name)==0)){
+         exist=1;
+         convActuelle = &(listConversation[i]);
+         printf("conversation already exist\n");
+      }
+   }
+   // si elle n'existe pas : la créer
+   if(exist==0 && (*nbConversations)<=100){
+      printf("conversation needs to be create\n");
+      Conversation conv = { .clientA = getClient(senderName,clients,nbClient), .clientB = getClient(receiverName,clients,nbClient), 
+                           .historic = (Message *)malloc(sizeof(Message)*20), .nbMessage = 0 };
+      listConversation[*nbConversations]= conv;
+      convActuelle = &(listConversation[*nbConversations]);
+      (*nbConversations)++;
+   }
+   // update la conversation
+   Message newMsg = { .sender = getClient(senderName,clients,nbClient), .date = 0};
+   strcpy(newMsg.text, buffer);
+   convActuelle->historic[convActuelle->nbMessage] = newMsg;
+   convActuelle->nbMessage++;
+
+   // envoyer le message au destinataire
+   char message[BUF_SIZE];
+   message[0] = 0;
+   strcpy(message,"");
+   strncpy(message, senderName, BUF_SIZE - 1);
+   strncat(message, " : ", sizeof message - strlen(message) - 1);
+   strncat(message, buffer, sizeof message - strlen(message) - 1);
+   write_client( getClient(receiverName,clients,nbClient)->sock, message);
+}
+
 static int init_connection(void)
 {
    SOCKET sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -227,6 +272,16 @@ static void write_client(SOCKET sock, const char *buffer)
       perror("send()");
       exit(errno);
    }
+}
+
+static Client * getClient(const char *name, Client *listClient, int nbClient){
+   Client * res=NULL;
+   for (int i=0; i<nbClient; i++){
+      if(strcmp(listClient[i].name,name)==0){
+         res=&listClient[i];
+      }
+   }
+   return res;
 }
 
 int main(int argc, char **argv)
