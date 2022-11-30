@@ -6,7 +6,7 @@
 typedef struct
 {  
    char name[BUF_SIZE];
-   Client *members;
+   Client **members;
    int nbMembers ;
    Message *historic;
    int nbMessage;
