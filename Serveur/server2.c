@@ -127,9 +127,20 @@ static void app(void)
                   printf("oui : %s : %s \n",getClient(client.name,clients, actual)->name, buffer);
 
                   //send_message_to_all_clients(clients, client, actual, buffer, 0);
+                  
+                  int command = 0;
+                  char nomGr[BUF_SIZE];
+                  char nomC[BUF_SIZE];
+                  char message[BUF_SIZE];
+                  strcpy(message,"");
+                  strcpy(nomC,"");
+                  strcpy(nomGr,"");
+                  printf("%s : %s \n",client.name, buffer);
+                  command = analyse(buffer, &nomGr, &nomC, &message);
+                  printf("Command: %d \n NameGroup: %s \n NameClient:%s \n Message: %s \n", command, nomGr, nomC, message);
 
-                  char nom[]="Laura";
-                  char nomGr[]="Grp";
+                  //char nom[]="Laura";
+                  //char nomGr[]="Grp";
 
                   Group gr = {.members=(Client **)malloc(sizeof(Client*)*20) ,.nbMembers=0, .historic = (Message *)malloc(sizeof(Message)*20), .nbMessage = 0 };
                   strcpy(gr.name, nomGr);
@@ -168,6 +179,88 @@ static void remove_client(Client *clients, int to_remove, int *actual)
    memmove(clients + to_remove, clients + to_remove + 1, (*actual - to_remove - 1) * sizeof(Client));
    /* number client - 1 */
    (*actual)--;
+}
+
+int analyse(const char *buffer, char *nameGroup, char *nameClient, char *text){
+   /*#Send #NameClient blablabla
+    #Send #Group #NameGroup blablabla
+    #Create 
+    #Add
+    #Remove
+   */
+   char nGroup[BUF_SIZE];
+   char nClient[BUF_SIZE];
+   char message[BUF_SIZE];
+   strcpy(message,"");
+   strcpy(nClient,"");
+   strcpy(nGroup,"");
+   int indexCommand=0;
+   int indexName=0;
+   int indexText=0;
+   
+   if(strncmp(buffer,"#Send", 5)==0){
+      printf("send \n");
+      indexCommand=5;
+      if(buffer[indexCommand]==' ' && buffer[indexCommand+1] == '#'){
+         indexCommand = indexCommand + 2;
+         if(buffer[indexCommand]=='G' && buffer[indexCommand+1]=='r' &&  buffer[indexCommand+2]=='o' &&  buffer[indexCommand+3]=='u' 
+            &&  buffer[indexCommand+4]=='p' && buffer[indexCommand+5]==' ' && buffer[indexCommand+6] == '#'){
+               indexCommand = indexCommand + 7;
+               while (buffer[indexCommand] != ' '){
+                  nGroup[indexName]=buffer[indexCommand];
+                  indexName++;
+                  indexCommand++;
+               }
+               strcpy(nameGroup,nGroup);
+               indexCommand++;
+               while(buffer[indexCommand] != '\0'){
+                  message[indexText] = buffer[indexCommand];
+                  indexText++;
+                  indexCommand++;
+               }
+               strcpy(text, message);
+               return 1;
+         } else{
+            //printf("%s\n", buffer);
+           // printf("%s\n", nClient);
+            while (buffer[indexCommand] != ' '){
+                  //printf("%s\n", buffer[indexCommand]);
+                  nClient[indexName]=buffer[indexCommand];
+                  //printf("%d\n", buffer[indexCommand]);
+                  indexName++;
+                  indexCommand++;
+                  //printf("%s %d %d\n", nClient, indexCommand, indexName);
+                  //printf("%s\n", buffer);
+               
+               }
+               //printf("%s\n", nClient);
+               strcpy(nameClient,nClient);
+               indexCommand++;
+               while(buffer[indexCommand] != '\0'){
+                  message[indexText] = buffer[indexCommand];
+                  indexText++;
+                  indexCommand++;
+               }
+               strcpy(text, message);
+               return 2;
+         }
+      }
+   } else if (strncmp(buffer,"#Create",6)==0){
+      printf("created \n");
+      
+       return 3;
+      
+   } else if (strncmp(buffer,"#Add",4)==0){
+      printf("add \n");
+      return 4;
+   } else if (strncmp(buffer,"#Remove",7)==0){
+      printf("remove \n");
+      return 5;
+   } else{
+      printf("Ce n'est pas un commande possible \n");
+   }
+
+   return 0;
 }
 
 static void send_message_to_all_clients(Client *clients, Client sender, int actual, const char *buffer, char from_server)
