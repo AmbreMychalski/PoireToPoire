@@ -53,5 +53,7 @@ static void send_message_to_all_clients(Client *clients, Client client, int actu
 static void remove_client(Client *clients, int to_remove, int *actual);
 static void clear_clients(Client *clients, int actual);
 static Client * getClient(const char *name, Client *listClient, int nbClient);
-
+static void send_message_to_conversation(Conversation* listConversation, const char* senderName, const char* receiverName, 
+                                          const char *buffer, Client*clients, int * nbConversations, int nbClient);
+static void send_message_to_group(const char *nomClient, char *nomGroup, Group *listGroup, int nbGroup, const char *buffer);
 #endif /* guard */

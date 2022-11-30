@@ -36,11 +36,11 @@ static void app(void)
    int actual = 0;
    int max = sock;
    int nbConversations = 0;
+   int nbGroup=0;
    /* an array for all clients */
    Client clients[MAX_CLIENTS];
    Client AllClient[MAX_ALLCLIENTS];
-   Group *listGroup = (Group *) malloc(50*sizeof(Group));
-   int nbGroup=0;
+   Group *listGroup = (Group *) malloc(50*sizeof(Group)); 
 
    Conversation *conversations = (Conversation *) malloc(100*sizeof(Conversation));
    fd_set rdfs;
@@ -126,7 +126,20 @@ static void app(void)
                {
                   printf("oui : %s : %s \n",getClient(client.name,clients, actual)->name, buffer);
 
-                  send_message_to_all_clients(clients, client, actual, buffer, 0);
+                  //send_message_to_all_clients(clients, client, actual, buffer, 0);
+
+                  char nom[]="Laura";
+                  char nomGr[]="Grp";
+
+                  Group gr = {.members=(Client **)malloc(sizeof(Client*)*20) ,.nbMembers=0, .historic = (Message *)malloc(sizeof(Message)*20), .nbMessage = 0 };
+                  strcpy(gr.name, nomGr);
+                  gr.members[0]=&clients[0];
+                  gr.members[1]=&clients[1];
+                  gr.nbMembers=2;
+                  listGroup[0]=gr;
+                  nbGroup++;
+                  //send_message_to_conversation(conversations,client.name,nom,buffer,clients,&nbConversations,actual);
+                  send_message_to_group(client.name,nomGr,listGroup,nbGroup, buffer);
                   
                   //send_message_to_group(group, client, text);
                }
@@ -208,12 +221,15 @@ static void send_message_to_group(const char *nomClient, char *nomGroup, Group *
       if(strcmp(nomGroupI, nomGroup)==0){
          for(int j = 0; j < listGroup[i].nbMembers; j++)
          {
-            strcpy(message,"");
+            printf("ici : %d\n", i);
             /* we don't send message to the sender */
-            if(strcmp(listGroup[i].members[i]->name, nomClient)!=0)
-            {
+            if(strcmp(listGroup[i].members[j]->name, nomClient)!=0)
+            {   
+               strcpy(message,"(Group) ");
+               strncat(message, nomClient, sizeof message - strlen(message) - 1);
+               strncat(message, " : ", sizeof message - strlen(message) - 1);
                strncat(message, buffer, sizeof message - strlen(message) - 1);
-               write_client(listGroup[i].members[i]->sock, message);
+               write_client(listGroup[i].members[j]->sock, message);
             }
          }
       }     
@@ -221,18 +237,10 @@ static void send_message_to_group(const char *nomClient, char *nomGroup, Group *
 
    //si le groupe n'est pas trouvé
    if(groupFound == 0){
-      
+      strcpy(message,"Error : the group doesn't exist");
    }
 }
 
-static Client * getClient(const char *name, Client *listClient, int nbClient){
-   Client * res=NULL;
-   for (int i=0; i<nbClient; i++){
-      if(strcmp(listClient[i].name,name)==0){
-         res=&listClient[i];
-      }
-   }
-   return res;
 static void send_message_to_conversation(Conversation* listConversation, const char* senderName, const char* receiverName, 
                                           const char *buffer, Client*clients, int * nbConversations, int nbClient){
    // vérifier si la conversation existe déjà
