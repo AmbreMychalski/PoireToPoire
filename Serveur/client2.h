@@ -2,12 +2,14 @@
 #define CLIENT_H
 
 #include "server2.h"
+#include <time.h>
 
 typedef struct
 {
    SOCKET sock;
    char name[BUF_SIZE];
-   unsigned long int dateLastCo;
+   time_t dateLastCo;
+   int connected;
 }Client;
 
 #endif /* guard */

@@ -46,6 +46,9 @@ static void app(void)
    Conversation *conversations = (Conversation *) malloc(100*sizeof(Conversation));
    fd_set rdfs;
 
+   //test variable
+   int count =0;
+
    while(1)
    {
       int i = 0;
@@ -106,6 +109,8 @@ static void app(void)
                clientFound=1;
                c=&allClient[i];
                c->sock=csock;
+
+               send_message_from_historic(c, listGroup, nbGroup, conversations);
             }
          }
 
@@ -117,7 +122,8 @@ static void app(void)
          }
 
          
-         strncpy(c->name, buffer, BUF_SIZE - 1);
+         //strncpy(c->name, buffer, BUF_SIZE - 1);
+         c->connected=1;
          clients[actual] = c;
          actual++;
       }
@@ -134,6 +140,8 @@ static void app(void)
                /* client disconnected */
                if(c == 0)
                {
+                  time (&clients[i]->dateLastCo);
+                  clients[i]->connected=0;
                   closesocket(clients[i]->sock);
                   remove_client(clients, i, &actual);
                   strncpy(buffer, client->name, BUF_SIZE - 1);                 
@@ -145,7 +153,7 @@ static void app(void)
                   
                   //send_message_to_all_clients(clients, client, actual, buffer, 0);
                   
-                  int command = 0;
+                  /* int command = 0;
                   char nomGr[BUF_SIZE];
                   char nomC[BUF_SIZE];
                   char message[BUF_SIZE];
@@ -154,20 +162,27 @@ static void app(void)
                   strcpy(nomGr,"");
                   printf("%s : %s \n",client.name, buffer);
                   command = analyse(buffer, &nomGr, &nomC, &message);
-                  printf("Command: %d \n NameGroup: %s \n NameClient:%s \n Message: %s \n", command, nomGr, nomC, message);
+                  printf("Command: %d \n NameGroup: %s \n NameClient:%s \n Message: %s \n", command, nomGr, nomC, message); */
 
-                  //char nom[]="Laura";
-                  //char nomGr[]="Grp";
+                  char nom[]="Laura";
+                  char nomGr[]="Grp";
+                  
+                  //Pour executer ce code que 1 fois (c'est du test)
+                  if(count==0)  {                
 
-                  Group gr = {.members=(Client **)malloc(sizeof(Client*)*20) ,.nbMembers=0, .historic = (Message *)malloc(sizeof(Message)*20), .nbMessage = 0 };
-                  strcpy(gr.name, nomGr);
-                  gr.members[0]=&allClient[0];
-                  gr.members[1]=&allClient[1];
-                  gr.nbMembers=2;
-                  listGroup[0]=gr;
-                  nbGroup++;
+                     Group gr = {.members=(Client **)malloc(sizeof(Client*)*20) ,.nbMembers=0, .historic = (Message *)malloc(sizeof(Message)*20), .nbMessage = 0 };
+                     strcpy(gr.name, nomGr);
+                     gr.members[0]=&allClient[0];
+                     gr.members[1]=&allClient[1];
+                     gr.nbMembers=2;
+                     listGroup[0]=gr;
+                     nbGroup++;
+
+                     count++;
+                  }
+                  
                   //send_message_to_conversation(conversations,client->name,nom,buffer,allClient,&nbConversations,nbTotalClient);
-                  send_message_to_group(client->name,nomGr,listGroup,nbGroup, buffer);
+                  send_message_to_group(client->name,nomGr,listGroup,nbGroup, buffer, allClient, nbTotalClient);
                   
                   //send_message_to_group(group, client, text);
                }
@@ -309,20 +324,25 @@ static void send_message_from_historic(Client *c, Group *listGroup, int nbGroup,
    for(int i =0; i<nbGroup; i++){
        for(int j = 0; j < listGroup[i].nbMembers; j++)
          {
-            if(strcmp(listGroup[i].members[i]->name, c->name)==0)
+            if(strcmp(listGroup[i].members[j]->name, c->name)==0)
             {
-               for(int w=0; w<listGroup[i].nbMessage; i++){
-                  if(listGroup[i].historic[w].date>c->dateLastCo){
-                     strncpy(message,listGroup[i].historic[w].text , BUF_SIZE - 1);
-                     write_client(c->sock, message);
-                  }
+               for(int w=0; w<listGroup[i].nbMessage; w++){
+                  
+                  strcpy(message,"(Group) ");
+                  strncat(message, listGroup[i].historic[w].sender->name, sizeof message - strlen(message) - 1);
+                  strncat(message, " : ", sizeof message - strlen(message) - 1);
+                  strncat(message, listGroup[i].historic[w].text, sizeof message - strlen(message) - 1);
+                  strncat(message, " \n ", sizeof message - strlen(message) - 1);
+                  write_client(c->sock, message);
+                  
                }               
             }
          }
    }
 }
 
-static void send_message_to_group(const char *nomClient, char *nomGroup, Group *listGroup, int nbGroup, const char *buffer){
+static void send_message_to_group(const char *nomClient, char *nomGroup, Group *listGroup, int nbGroup, const char *buffer,
+                                 Client*clients, int nbClient){
    char message[BUF_SIZE];
    message[0] = 0;
    int groupFound =0;
@@ -330,12 +350,20 @@ static void send_message_to_group(const char *nomClient, char *nomGroup, Group *
       const char * nomGroupI = listGroup[i].name;
       groupFound = 1;
       if(strcmp(nomGroupI, nomGroup)==0){
+         
+         // update la conversation
+         Message newMsg = { .sender = getClient(nomClient,clients,nbClient)};
+         time ( &newMsg.date );
+         strcpy(newMsg.text, buffer);
+         listGroup[i].historic[listGroup[i].nbMessage] = newMsg;
+         listGroup[i].nbMessage=listGroup[i].nbMessage+1;
+         
+
          for(int j = 0; j < listGroup[i].nbMembers; j++)
          {
-            printf("ici : %d\n", j);
             /* we don't send message to the sender */
-            if(strcmp(listGroup[i].members[j]->name, nomClient)!=0)
-            {   
+            if(strcmp(listGroup[i].members[j]->name, nomClient)!=0 && listGroup[i].members[j]->connected == 1 )
+            {  
                strcpy(message,"(Group) ");
                strncat(message, nomClient, sizeof message - strlen(message) - 1);
                strncat(message, " : ", sizeof message - strlen(message) - 1);
@@ -381,7 +409,8 @@ static void send_message_to_conversation(Conversation* listConversation, const c
       (*nbConversations)++;
    }
    // update la conversation
-   Message newMsg = { .sender = getClient(senderName,clients,nbClient), .date = 0};
+   Message newMsg = { .sender = getClient(senderName,clients,nbClient)};
+   time ( &newMsg.date );
    strcpy(newMsg.text, buffer);
    convActuelle->historic[convActuelle->nbMessage] = newMsg;
    convActuelle->nbMessage++;

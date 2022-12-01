@@ -55,5 +55,6 @@ static void clear_clients(Client **clients, int actual);
 static Client * getClient(const char *name, Client *listClient, int nbClient);
 static void send_message_to_conversation(Conversation* listConversation, const char* senderName, const char* receiverName, 
                                           const char *buffer, Client*clients, int * nbConversations, int nbClient);
-static void send_message_to_group(const char *nomClient, char *nomGroup, Group *listGroup, int nbGroup, const char *buffer);
+static void send_message_to_group(const char *nomClient, char *nomGroup, Group *listGroup, int nbGroup, const char *buffer, Client*clients, int nbClient);
+static void send_message_from_historic(Client *c, Group *listGroup, int nbGroup, Conversation *listConversation );
 #endif /* guard */
