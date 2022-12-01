@@ -37,9 +37,10 @@ static void app(void)
    int max = sock;
    int nbConversations = 0;
    int nbGroup=0;
+   int nbTotalClient =0;
    /* an array for all clients */
-   Client clients[MAX_CLIENTS];
-   Client AllClient[MAX_ALLCLIENTS];
+   Client * clients[MAX_CLIENTS];
+   Client   allClient[MAX_ALLCLIENTS];
    Group *listGroup = (Group *) malloc(50*sizeof(Group)); 
 
    Conversation *conversations = (Conversation *) malloc(100*sizeof(Conversation));
@@ -59,7 +60,7 @@ static void app(void)
       /* add socket of each client */
       for(i = 0; i < actual; i++)
       {
-         FD_SET(clients[i].sock, &rdfs);
+         FD_SET(clients[i]->sock, &rdfs);
       }
 
       if(select(max + 1, &rdfs, NULL, NULL, NULL) == -1)
@@ -98,8 +99,25 @@ static void app(void)
 
          FD_SET(csock, &rdfs);
 
-         Client c = { csock };
-         strncpy(c.name, buffer, BUF_SIZE - 1);
+         Client *c;
+         int clientFound=0;
+         for(int i =0; i<nbTotalClient; i++){
+            if(strcmp(allClient[i].name,buffer)==0){
+               clientFound=1;
+               c=&allClient[i];
+               c->sock=csock;
+            }
+         }
+
+         if(clientFound==0){   
+            allClient[nbTotalClient].sock=csock ;
+            strncpy(allClient[nbTotalClient].name, buffer, BUF_SIZE - 1);
+            c=&allClient[nbTotalClient];
+            nbTotalClient++;
+         }
+
+         
+         strncpy(c->name, buffer, BUF_SIZE - 1);
          clients[actual] = c;
          actual++;
       }
@@ -109,23 +127,22 @@ static void app(void)
          for(i = 0; i < actual; i++)
          {
             /* a client is talking */
-            if(FD_ISSET(clients[i].sock, &rdfs))
+            if(FD_ISSET(clients[i]->sock, &rdfs))
             {
-               Client client = clients[i];
-               int c = read_client(clients[i].sock, buffer);
+               Client *client = clients[i];
+               int c = read_client(clients[i]->sock, buffer);
                /* client disconnected */
                if(c == 0)
                {
-                  closesocket(clients[i].sock);
+                  closesocket(clients[i]->sock);
                   remove_client(clients, i, &actual);
-                  strncpy(buffer, client.name, BUF_SIZE - 1);                 
+                  strncpy(buffer, client->name, BUF_SIZE - 1);                 
                   strncat(buffer, " disconnected !", BUF_SIZE - strlen(buffer) - 1);
-                  send_message_to_all_clients(clients, client, actual, buffer, 1);
+                  send_message_to_all_clients(clients, *client, actual, buffer, 1);
                }
                else
                {
-                  printf("oui : %s : %s \n",getClient(client.name,clients, actual)->name, buffer);
-
+                  
                   //send_message_to_all_clients(clients, client, actual, buffer, 0);
 
                   char nom[]="Laura";
@@ -133,13 +150,13 @@ static void app(void)
 
                   Group gr = {.members=(Client **)malloc(sizeof(Client*)*20) ,.nbMembers=0, .historic = (Message *)malloc(sizeof(Message)*20), .nbMessage = 0 };
                   strcpy(gr.name, nomGr);
-                  gr.members[0]=&clients[0];
-                  gr.members[1]=&clients[1];
+                  gr.members[0]=&allClient[0];
+                  gr.members[1]=&allClient[1];
                   gr.nbMembers=2;
                   listGroup[0]=gr;
                   nbGroup++;
-                  //send_message_to_conversation(conversations,client.name,nom,buffer,clients,&nbConversations,actual);
-                  send_message_to_group(client.name,nomGr,listGroup,nbGroup, buffer);
+                  //send_message_to_conversation(conversations,client->name,nom,buffer,allClient,&nbConversations,nbTotalClient);
+                  send_message_to_group(client->name,nomGr,listGroup,nbGroup, buffer);
                   
                   //send_message_to_group(group, client, text);
                }
@@ -153,24 +170,24 @@ static void app(void)
    end_connection(sock);
 }
 
-static void clear_clients(Client *clients, int actual)
+static void clear_clients(Client **clients, int actual)
 {
    int i = 0;
    for(i = 0; i < actual; i++)
    {
-      closesocket(clients[i].sock);
+      closesocket(clients[i]->sock);
    }
 }
 
-static void remove_client(Client *clients, int to_remove, int *actual)
+static void remove_client(Client **clients, int to_remove, int *actual)
 {
    /* we remove the client in the array */
-   memmove(clients + to_remove, clients + to_remove + 1, (*actual - to_remove - 1) * sizeof(Client));
+   memmove(clients + to_remove, clients + to_remove + 1, (*actual - to_remove - 1) * sizeof(Client*));
    /* number client - 1 */
    (*actual)--;
 }
 
-static void send_message_to_all_clients(Client *clients, Client sender, int actual, const char *buffer, char from_server)
+static void send_message_to_all_clients(Client **clients, Client sender, int actual, const char *buffer, char from_server)
 {
    int i = 0;
    char message[BUF_SIZE];
@@ -179,7 +196,7 @@ static void send_message_to_all_clients(Client *clients, Client sender, int actu
    {
       strcpy(message,"");
       /* we don't send message to the sender */
-      if(sender.sock != clients[i].sock)
+      if(sender.sock != (*clients)[i].sock)
       {
          if(from_server == 0)
          {
@@ -187,7 +204,7 @@ static void send_message_to_all_clients(Client *clients, Client sender, int actu
             strncat(message, " : ", sizeof message - strlen(message) - 1);
          }
          strncat(message, buffer, sizeof message - strlen(message) - 1);
-         write_client(clients[i].sock, message);
+         write_client((*clients)[i].sock, message);
       }
    }
 }
@@ -221,7 +238,7 @@ static void send_message_to_group(const char *nomClient, char *nomGroup, Group *
       if(strcmp(nomGroupI, nomGroup)==0){
          for(int j = 0; j < listGroup[i].nbMembers; j++)
          {
-            printf("ici : %d\n", i);
+            printf("ici : %d\n", j);
             /* we don't send message to the sender */
             if(strcmp(listGroup[i].members[j]->name, nomClient)!=0)
             {   
