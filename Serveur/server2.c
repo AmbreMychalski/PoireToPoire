@@ -203,6 +203,9 @@ static void app(void)
                   //send_message_to_conversation(conversations,client->name,nom,buffer,allClient,&nbConversations,nbTotalClient);
                   send_message_to_group(client->name,nomGr,listGroup,nbGroup, buffer, allClient, nbTotalClient);
                   
+                  
+                  nbGroup=create_group("Test", listGroup, 2, clients, nbTotalClient, cName, nbGroup);
+                  printf("%s %s\n", listGroup[1].name, listGroup[1].members[0]->name);
                   //send_message_to_group(group, client, text);
                }
                break;
@@ -315,6 +318,20 @@ int analyse(const char *buffer, char *nameGroup, char *nameClient, char *text){
    }
 
    return 0;
+}
+
+static int create_group(char *nomGroup, Group *listGroup, int nbMembers, Client *clients, int nbClient, char* clientNames, int nbGroup)
+{
+   Group gr = {.members=(Client **)malloc(sizeof(Client*)*20) ,.nbMembers=0, .historic = (Message *)malloc(sizeof(Message)*20), .nbMessage = 0 };
+                     strcpy(gr.name, nomGroup);
+   for(int i=0; i<nbMembers; i++){
+      gr.members[i]=getClient(clientNames[i], clients, nbClient);
+      gr.nbMembers++;
+   }
+   listGroup[nbGroup]=gr;
+   nbGroup++;
+   return nbGroup;
+
 }
 
 static void send_message_to_all_clients(Client **clients, Client sender, int actual, const char *buffer, char from_server)

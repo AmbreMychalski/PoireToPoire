@@ -57,4 +57,5 @@ static void send_message_to_conversation(Conversation* listConversation, const c
                                           const char *buffer, Client*clients, int * nbConversations, int nbClient);
 static void send_message_to_group(const char *nomClient, char *nomGroup, Group *listGroup, int nbGroup, const char *buffer, Client*clients, int nbClient);
 static void send_message_from_historic(Client *c, Group *listGroup, int nbGroup, Conversation *listConversation );
+static int create_group(char *nomGroup, Group *listGroup, int nbMembers, Client *clients, int nbClient, char* clientNames, int nbGroup);
 #endif /* guard */
