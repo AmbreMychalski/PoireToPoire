@@ -7,6 +7,7 @@
 #include "client2.h"
 
 
+int analyse(const char *buffer, char *nameGroup, char *nameClient, char *text);
 
 static void init(void)
 {
@@ -153,19 +154,37 @@ static void app(void)
                   
                   //send_message_to_all_clients(clients, client, actual, buffer, 0);
                   
-                  /* int command = 0;
+                  int command = 0;
                   char nomGr[BUF_SIZE];
                   char nomC[BUF_SIZE];
                   char message[BUF_SIZE];
                   strcpy(message,"");
                   strcpy(nomC,"");
                   strcpy(nomGr,"");
-                  printf("%s : %s \n",client.name, buffer);
-                  command = analyse(buffer, &nomGr, &nomC, &message);
-                  printf("Command: %d \n NameGroup: %s \n NameClient:%s \n Message: %s \n", command, nomGr, nomC, message); */
+                  command = analyse(buffer, nomGr, nomC, message);
+                  switch (command){
+                  case 1: //Send Group
+                     
+                     break;
+                  case 2: //Send Client
+                     
+                     break;
+                  case 3: //Create
+                     
+                     break;
+                  case 4: //Add
+                     
+                     break;
+                  case 5: //Remove
+                  
+                     break;
+                  default:
+                     break;
+                  }
+                  printf("Command: %d \n NameGroup: %s \n NameClient:%s \n Message: %s \n", command, nomGr, nomC, message);
 
-                  char nom[]="Laura";
-                  char nomGr[]="Grp";
+                  //char nom[]="Laura";
+                  //char nomGr[]="Grp";
                   
                   //Pour executer ce code que 1 fois (c'est du test)
                   if(count==0)  {                
@@ -213,69 +232,65 @@ static void remove_client(Client **clients, int to_remove, int *actual)
    (*actual)--;
 }
 
+void sendedText(const char *buffer, int indexCommand, char *text){
+   char message[BUF_SIZE];
+   int indexText=0;
+   message[0] = 0;
+   while(buffer[indexCommand] != '\0'){
+      message[indexText] = buffer[indexCommand];
+      indexText++;
+      indexCommand++;
+   }
+   strcpy(text, message);
+}
+
+void NameGroup(const char *buffer, int indexCommand, char *nameGroup){
+   char nGroup[BUF_SIZE];
+   int indexName=0;
+   nGroup[0] = 0;
+   while (buffer[indexCommand] != ' '){
+      nGroup[indexName]=buffer[indexCommand];
+      indexName++;
+      indexCommand++;
+   }
+   strcpy(nameGroup,nGroup);
+}
 
 int analyse(const char *buffer, char *nameGroup, char *nameClient, char *text){
    /*#Send #NameClient blablabla
     #Send #Group #NameGroup blablabla
-    #Create 
-    #Add
+    #Create #NameGroup nameClient1, nameClient2 
+    #Add #NameGroup nameClient
     #Remove
    */
    char nGroup[BUF_SIZE];
    char nClient[BUF_SIZE];
-   char message[BUF_SIZE];
-   strcpy(message,"");
-   strcpy(nClient,"");
-   strcpy(nGroup,"");
+   nGroup[0] = 0;
+   nClient[0] = 0;
    int indexCommand=0;
    int indexName=0;
-   int indexText=0;
    
    if(strncmp(buffer,"#Send", 5)==0){
-      printf("send \n");
       indexCommand=5;
       if(buffer[indexCommand]==' ' && buffer[indexCommand+1] == '#'){
          indexCommand = indexCommand + 2;
          if(buffer[indexCommand]=='G' && buffer[indexCommand+1]=='r' &&  buffer[indexCommand+2]=='o' &&  buffer[indexCommand+3]=='u' 
             &&  buffer[indexCommand+4]=='p' && buffer[indexCommand+5]==' ' && buffer[indexCommand+6] == '#'){
-               indexCommand = indexCommand + 7;
-               while (buffer[indexCommand] != ' '){
-                  nGroup[indexName]=buffer[indexCommand];
-                  indexName++;
-                  indexCommand++;
-               }
-               strcpy(nameGroup,nGroup);
-               indexCommand++;
-               while(buffer[indexCommand] != '\0'){
-                  message[indexText] = buffer[indexCommand];
-                  indexText++;
-                  indexCommand++;
-               }
-               strcpy(text, message);
-               return 1;
+            indexCommand = indexCommand + 7;
+            NameGroup(buffer,indexCommand,nameGroup);
+            indexCommand++;
+            sendedText(buffer,indexCommand,text);
+            return 1;
          } else{
-            //printf("%s\n", buffer);
-           // printf("%s\n", nClient);
             while (buffer[indexCommand] != ' '){
-                  //printf("%s\n", buffer[indexCommand]);
                   nClient[indexName]=buffer[indexCommand];
-                  //printf("%d\n", buffer[indexCommand]);
                   indexName++;
                   indexCommand++;
-                  //printf("%s %d %d\n", nClient, indexCommand, indexName);
-                  //printf("%s\n", buffer);
-               
-               }
-               //printf("%s\n", nClient);
-               strcpy(nameClient,nClient);
-               indexCommand++;
-               while(buffer[indexCommand] != '\0'){
-                  message[indexText] = buffer[indexCommand];
-                  indexText++;
-                  indexCommand++;
-               }
-               strcpy(text, message);
-               return 2;
+            }
+            strcpy(nameClient,nClient);
+            indexCommand++;
+            sendedText(buffer,indexCommand,text);
+            return 2;
          }
       }
    } else if (strncmp(buffer,"#Create",6)==0){
