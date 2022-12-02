@@ -348,11 +348,12 @@ static int create_group(char *nomGroup, Group *listGroup, int nbMembers, Client 
    return nbGroup;
 }
 
-static void remove_client_group(char* nameC, Group *listGroup, char *nomGroup, int nbGroup, Client *clients, int nbClient){
+static void remove_client_group(char *nomClient, char* nameD, Group *listGroup, char *nomGroup, int nbGroup, Client *clients, int nbClient){
    char message[BUF_SIZE];
    message[0] = 0;
    int groupFound=0;
    int clientFound=0;
+   Client *clientI = getClient(nomClient,clients,nbClient);;
 
    for(int i=0; i<nbGroup;i++){
       const char *nomGroupI = listGroup[i].name;
@@ -360,7 +361,7 @@ static void remove_client_group(char* nameC, Group *listGroup, char *nomGroup, i
          groupFound=1;
          int nMembers = listGroup[i].nbMembers;
          for(int y=0; y<nMembers; y++){
-            if(strcmp(listGroup[i].members[y]->name, nameC) ==0){
+            if(strcmp(listGroup[i].members[y]->name, nameD) ==0){
                clientFound=1;
                for(int z=y;z<nMembers-1;z++){
                   listGroup[i].members[z] = listGroup[i].members[y+1];
@@ -381,16 +382,15 @@ static void remove_client_group(char* nameC, Group *listGroup, char *nomGroup, i
 }
 
 
-static void add_client_group(char* nameC, Group *listGroup, char *nomGroup, int nbGroup, Client *clients, int nbClient){
+static void add_client_group(char *nomClient, char* nameA, Group *listGroup, char *nomGroup, int nbGroup, Client *clients, int nbClient){
    char message[BUF_SIZE];
    message[0] = 0;
    int groupFound=0;
    int clientFound=0;
-   Client *clientI;
+   Client *clientI = getClient(nomClient,clients,nbClient);;
    for(int i=0;i<nbClient;i++){
-      if(strcmp(clients[i].name,nameC)==0){
+      if(strcmp(clients[i].name,nameA)==0){
          clientFound=1;
-         clientI = &clients[i];
       }
    }
    if(clientFound){
