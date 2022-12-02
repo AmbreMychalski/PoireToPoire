@@ -175,10 +175,10 @@ static void app(void)
 
                   switch (command){
                   case 1: //Send Group
-                     send_message_to_group(client->name,nomGr,listGroup,nbGroup, buffer, allClient, nbTotalClient);
+                     send_message_to_group(client->name,nomGr,listGroup,nbGroup, message, allClient, nbTotalClient);
                      break;
                   case 2: //Send Client
-                     //send_message_to_conversation(conversations,&clients[i]->name,nomC,message,allClient,&nbConversations,nbTotalClient);
+                     send_message_to_conversation(conversations,&clients[i]->name,nomC,message,allClient,&nbConversations,nbTotalClient);
                      break;
                   case 3: //Create
                      nbGroup = create_group(nomGr,nbClient,listClient,listGroup,allClient,nbTotalClient,nbGroup);
@@ -191,8 +191,8 @@ static void app(void)
                      }*/
                      break;
                   case 4: //Add
-                     /* add_client_group("ju","ambre",listGroup,"MyGroup",2,allClient,nbTotalClient);
-                     for(int i=0;i<nbGroup;i++){
+                     add_client_group(client->name,nomC,listGroup,nomGr,nbGroup,allClient,nbTotalClient);
+                     /*for(int i=0;i<nbGroup;i++){
                          printf("Group: %s \nClients:", listGroup[i].name);
                         for(int y=0; y<listGroup[i].nbMembers;y++){
                            printf("%s ", listGroup[i].members[y]->name);
@@ -201,14 +201,14 @@ static void app(void)
                      } */
                      break;
                   case 5: //Remove
-                     /* remove_client_group("ju", "laura", listGroup, "MyGroup", 2, allClient, nbTotalClient);
-                     for(int i=0;i<nbGroup;i++){
+                     remove_client_group(client->name,nomC, listGroup, nomGr,nbGroup, allClient, nbTotalClient);
+                     /*for(int i=0;i<nbGroup;i++){
                          printf("Group: %s \nClients:", listGroup[i].name);
                         for(int y=0; y<listGroup[i].nbMembers;y++){
                            printf("%s ", listGroup[i].members[y]->name);
                         }
                         printf("\n");
-                     } */
+                     }*/
                      break;
                   default:
                      break;
@@ -372,21 +372,21 @@ static void remove_client_group(char *nomClient, char* nameD, Group *listGroup, 
          for(int y=0; y<nMembers; y++){
             if(strcmp(listGroup[i].members[y]->name, nameD) ==0){
                clientFound=1;
-               for(int z=y;z<nMembers-1;z++){
-                  listGroup[i].members[z] = listGroup[i].members[y+1];
-               }
                listGroup[i].nbMembers = nMembers - 1;
             }
-         }
-         if(!clientFound){
-            strcpy(message,"Error : the client isn't in the group");
-            write_client(clientI->sock, message);
+            if(clientFound){
+               listGroup[i].members[y] = listGroup[i].members[y+1];
+            }
          }
       }
    }
+
    if(!groupFound){
       strcpy(message,"Error : the group doesn't exist");
       write_client(clientI->sock, message);
+   } else if(!clientFound){
+         strcpy(message,"Error : the client isn't in the group");
+         write_client(clientI->sock, message);
    }
 }
 
