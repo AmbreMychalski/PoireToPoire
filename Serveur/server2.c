@@ -202,10 +202,7 @@ static void app(void)
                   
                   //send_message_to_conversation(conversations,client->name,nom,buffer,allClient,&nbConversations,nbTotalClient);
                   send_message_to_group(client->name,nomGr,listGroup,nbGroup, buffer, allClient, nbTotalClient);
-                  
-                  
-                  nbGroup=create_group("Test", listGroup, 2, clients, nbTotalClient, cName, nbGroup);
-                  printf("%s %s\n", listGroup[1].name, listGroup[1].members[0]->name);
+
                   //send_message_to_group(group, client, text);
                }
                break;
@@ -331,7 +328,72 @@ static int create_group(char *nomGroup, Group *listGroup, int nbMembers, Client 
    listGroup[nbGroup]=gr;
    nbGroup++;
    return nbGroup;
+}
 
+static void remove_client_group(char* nameC, Group *listGroup, char *nomGroup, int nbGroup, Client *clients, int nbClient){
+   char message[BUF_SIZE];
+   message[0] = 0;
+   int groupFound=0;
+   int clientFound=0;
+
+   for(int i=0; i<nbGroup;i++){
+      const char *nomGroupI = listGroup[i].name;
+      if(strcmp(nomGroupI, nomGroup)==0){
+         groupFound=1;
+         int nMembers = listGroup[i].nbMembers;
+         for(int y=0; y<nMembers; y++){
+            if(strcmp(listGroup[i].members[y]->name, nameC) ==0){
+               clientFound=1;
+               for(int z=y;z<nMembers-1;z++){
+                  listGroup[i].members[z] = listGroup[i].members[y+1];
+               }
+               listGroup[i].nbMembers = nMembers - 1;
+            }
+         }
+         if(!clientFound){
+            strcpy(message,"Error : the client isn't in the group");
+            write_client(clientI->sock, message);
+         }
+      }
+   }
+   if(!groupFound){
+      strcpy(message,"Error : the group doesn't exist");
+      write_client(clientI->sock, message);
+   }
+}
+
+
+static void add_client_group(char* nameC, Group *listGroup, char *nomGroup, int nbGroup, Client *clients, int nbClient){
+   char message[BUF_SIZE];
+   message[0] = 0;
+   int groupFound=0;
+   int clientFound=0;
+   Client *clientI;
+   for(int i=0;i<nbClient;i++){
+      if(strcmp(clients[i].name,nameC)==0){
+         clientFound=1;
+         clientI = &clients[i];
+      }
+   }
+   if(clientFound){
+      for(int i=0; i<nbGroup;i++){
+         const char *nomGroupI = listGroup[i].name;
+         if(strcmp(nomGroupI, nomGroup)==0){
+            groupFound=1;
+            int nMembers = listGroup[i].nbMembers;
+            listGroup[i].members[nMembers]=clientI;
+            listGroup[i].nbMembers = nMembers + 1;
+         }
+      }
+      if(!groupFound){
+         strcpy(message,"Error : the group doesn't exist");
+         write_client(clientI->sock, message);
+      }
+   }
+   else{
+      strcpy(message,"Error : the client doesn't exist");
+      write_client(clientI->sock, message);
+   }
 }
 
 static void send_message_to_all_clients(Client **clients, Client sender, int actual, const char *buffer, char from_server)
