@@ -326,6 +326,7 @@ static int analyse(const char *buffer, char *nameGroup, char *nameClient, char *
       printf("add \n");
       indexCommand++;      
       strcpy(nameGroup, splitCommand[indexCommand]);
+      memmove(nameGroup, nameGroup+1, strlen(nameGroup));
       indexCommand++;
       strcpy(nameClient, splitCommand[indexCommand]);
       return 4;
@@ -334,6 +335,7 @@ static int analyse(const char *buffer, char *nameGroup, char *nameClient, char *
 
       indexCommand++;      
       strcpy(nameGroup, splitCommand[indexCommand]);
+      memmove(nameGroup, nameGroup+1, strlen(nameGroup));
       indexCommand++;
       strcpy(nameClient, splitCommand[indexCommand]);
       return 5;
