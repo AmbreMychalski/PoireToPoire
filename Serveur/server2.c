@@ -168,10 +168,10 @@ static void app(void)
                   command = analyse(buffer, nomGr, nomC, message,listClient, &nbClient);
                   switch (command){
                   case 1: //Send Group
-                     
+                     send_message_to_group(client->name,nomGr,listGroup,nbGroup, buffer, allClient, nbTotalClient);
                      break;
                   case 2: //Send Client
-                     
+                     send_message_to_conversation(conversations,&clients[i]->name,nomC,message,allClient,&nbConversations,nbTotalClient);
                      break;
                   case 3: //Create
                      
