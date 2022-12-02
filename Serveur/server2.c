@@ -2,12 +2,14 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
+#include <string.h>
+#include <assert.h>
 
 #include "server2.h"
 #include "client2.h"
 
 
-int analyse(const char *buffer, char *nameGroup, char *nameClient, char *text);
+
 
 static void init(void)
 {
@@ -158,10 +160,12 @@ static void app(void)
                   char nomGr[BUF_SIZE];
                   char nomC[BUF_SIZE];
                   char message[BUF_SIZE];
+                  char *listClient[100];
+                  int nbClient=0;
                   strcpy(message,"");
                   strcpy(nomC,"");
                   strcpy(nomGr,"");
-                  command = analyse(buffer, nomGr, nomC, message);
+                  command = analyse(buffer, nomGr, nomC, message,listClient, &nbClient);
                   switch (command){
                   case 1: //Send Group
                      
@@ -181,8 +185,11 @@ static void app(void)
                   default:
                      break;
                   }
-                  printf("Command: %d \n NameGroup: %s \n NameClient:%s \n Message: %s \n", command, nomGr, nomC, message);
-
+                  printf("Command: %d \n NameGroup:%s \n NameClient:%s \n Message: %s\n nbclient: %d \n", command, nomGr, nomC, message,nbClient);
+                  for(int i =0; i<nbClient;i++){
+                     printf(" %s ",listClient[i]);
+                  }
+                  printf("\n");
                   //char nom[]="Laura";
                   //char nomGr[]="Grp";
                   
@@ -256,7 +263,7 @@ void NameGroup(const char *buffer, int indexCommand, char *nameGroup){
    strcpy(nameGroup,nGroup);
 }
 
-int analyse(const char *buffer, char *nameGroup, char *nameClient, char *text){
+static int analyse(const char *buffer, char *nameGroup, char *nameClient, char *text, char**listClient, int* nbClients){
    /*#Send #NameClient blablabla
     #Send #Group #NameGroup blablabla
     #Create #NameGroup nameClient1, nameClient2 
@@ -267,36 +274,53 @@ int analyse(const char *buffer, char *nameGroup, char *nameClient, char *text){
    char nClient[BUF_SIZE];
    nGroup[0] = 0;
    nClient[0] = 0;
+   strcpy(nClient,"");
+   strcpy(nGroup,"");
    int indexCommand=0;
    int indexName=0;
    
-   if(strncmp(buffer,"#Send", 5)==0){
-      indexCommand=5;
-      if(buffer[indexCommand]==' ' && buffer[indexCommand+1] == '#'){
-         indexCommand = indexCommand + 2;
-         if(buffer[indexCommand]=='G' && buffer[indexCommand+1]=='r' &&  buffer[indexCommand+2]=='o' &&  buffer[indexCommand+3]=='u' 
-            &&  buffer[indexCommand+4]=='p' && buffer[indexCommand+5]==' ' && buffer[indexCommand+6] == '#'){
-            indexCommand = indexCommand + 7;
-            NameGroup(buffer,indexCommand,nameGroup);
-            indexCommand++;
-            sendedText(buffer,indexCommand,text);
-            return 1;
-         } else{
-            while (buffer[indexCommand] != ' '){
-                  nClient[indexName]=buffer[indexCommand];
-                  indexName++;
-                  indexCommand++;
-            }
-            strcpy(nameClient,nClient);
-            indexCommand++;
-            sendedText(buffer,indexCommand,text);
-            return 2;
-         }
+   size_t countWord =0;
+   char command[BUF_SIZE];
+   strcpy(command,buffer);
+   char ** splitCommand = str_split(buffer,' ', &countWord);
+   countWord--;
+
+   printf("la : %s\n", splitCommand[indexCommand]);
+   
+   if( strcmp(splitCommand[indexCommand],"#Send")==0){
+      indexCommand++;
+      if(countWord>3 && strcmp(splitCommand[indexCommand],"#Group")==0){
+         indexCommand++;
+         strcpy(nameGroup, splitCommand[indexCommand]);
+         memmove(nameGroup, nameGroup+1, strlen(nameGroup));
+         size_t startOfText = strlen("#Send #Group ")+strlen(splitCommand[indexCommand]);
+         strcpy(text, substr(command,startOfText,strlen(command)-startOfText));
+         return 1;
+      } else if (countWord>2){
+         
+         strcpy(nameClient,splitCommand[indexCommand]);
+         
+         memmove(nameClient, nameClient+1, strlen(nameClient));
+         size_t startOfText = strlen("#Send ")+strlen(splitCommand[indexCommand]);
+         strcpy(text, substr(command,startOfText,strlen(command)-startOfText));
+         return 2;
       }
+      //}
    } else if (strncmp(buffer,"#Create",6)==0){
       printf("created \n");
-      
-       return 3;
+
+      indexCommand++;      
+      strcpy(nameGroup, splitCommand[indexCommand]);
+      indexCommand++;
+      memmove(nameGroup, nameGroup+1, strlen(nameGroup));
+      *nbClients=((int) countWord)-indexCommand;
+      int j=0;
+      for(; indexCommand<countWord; indexCommand++){
+         listClient[j]=(char*)malloc(BUF_SIZE);
+         strcpy(listClient[j],splitCommand[indexCommand]);
+         j++;
+      }      
+      return 3;
       
    } else if (strncmp(buffer,"#Add",4)==0){
       printf("add \n");
@@ -305,7 +329,7 @@ int analyse(const char *buffer, char *nameGroup, char *nameClient, char *text){
       printf("remove \n");
       return 5;
    } else{
-      printf("Ce n'est pas un commande possible \n");
+      printf("Ce n'est pas une commande possible \n");
    }
 
    return 0;
@@ -508,6 +532,62 @@ static Client * getClient(const char *name, Client *listClient, int nbClient){
       }
    }
    return res;
+}
+
+char** str_split(char* a_str, const char a_delim, size_t *size)
+{
+    char** result    = 0;
+    size_t count     = 0;
+    char* tmp        = a_str;
+    char* last_comma = 0;
+    char delim[2];
+    delim[0] = a_delim;
+    delim[1] = 0;
+
+    /* Count how many elements will be extracted. */
+    while (*tmp)
+    {
+        if (a_delim == *tmp)
+        {
+            count++;
+            last_comma = tmp;
+        }
+        tmp++;
+    }
+
+    /* Add space for trailing token. */
+    count += last_comma < (a_str + strlen(a_str) - 1);
+
+    /* Add space for terminating null string so caller
+       knows where the list of returned strings ends. */
+    count++;
+
+    result = malloc(sizeof(char*) * count);
+
+    if (result)
+    {
+        size_t idx  = 0;
+        char* token = strtok(a_str, delim);
+
+        while (token)
+        {
+            assert(idx < count);
+            *(result + idx++) = strdup(token);
+            token = strtok(0, delim);
+        }
+        assert(idx == count - 1);
+        *(result + idx) = 0;
+    }
+
+   *size = count;
+    return result;
+}
+
+char *substr(char const *input, size_t start, size_t len) { 
+    char *ret = malloc(len+1);
+    memcpy(ret, input+start, len);
+    ret[len]  = '\0';
+    return ret;
 }
 
 int main(int argc, char **argv)
