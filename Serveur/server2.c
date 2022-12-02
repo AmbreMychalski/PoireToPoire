@@ -175,7 +175,7 @@ static void app(void)
 
                   switch (command){
                   case 1: //Send Group
-                     send_message_to_group(client->name,nomGr,listGroup,nbGroup, buffer, allClient, nbTotalClient);
+                     send_message_to_group(client->name,nomGr,listGroup,nbGroup, message, allClient, nbTotalClient);
                      break;
                   case 2: //Send Client
                      send_message_to_conversation(conversations,&clients[i]->name,nomC,message,allClient,&nbConversations,nbTotalClient);
