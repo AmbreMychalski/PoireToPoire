@@ -60,7 +60,7 @@ static void send_message_to_conversation(Conversation* listConversation, const c
                                           const char *buffer, Client*clients, int * nbConversations, int nbClient);
 static void send_message_to_group(const char *nomClient, char *nomGroup, Group *listGroup, int nbGroup, const char *buffer, Client*clients, int nbClient);
 static void send_message_from_historic(Client *c, Group *listGroup, int nbGroup, Conversation *listConversation );
-static int create_group(char *nomGroup, Group *listGroup, int nbMembers, Client *clients, int nbClient, char* clientNames, int nbGroup);
+static int create_group(char *nomGroup, int nbMembers, char** clientNames, Group *listallGroup, Client *allclients, int nbClient,  int nbGroup);
 static void add_client_group(char *nomClient, char* nameA,Group *listGroup, char *nomGroup, int nbGroup, Client *clients, int nbClient);
 static void remove_client_group(char *nomClient, char* nameD,Group *listGroup, char *nomGroup, int nbGroup, Client *clients, int nbClient);
 #endif /* guard */

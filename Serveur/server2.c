@@ -171,10 +171,17 @@ static void app(void)
                      send_message_to_group(client->name,nomGr,listGroup,nbGroup, buffer, allClient, nbTotalClient);
                      break;
                   case 2: //Send Client
-                     send_message_to_conversation(conversations,&clients[i]->name,nomC,message,allClient,&nbConversations,nbTotalClient);
+                     //send_message_to_conversation(conversations,&clients[i]->name,nomC,message,allClient,&nbConversations,nbTotalClient);
                      break;
                   case 3: //Create
-                     
+                     nbGroup = create_group(nomGr,nbClient,listClient,listGroup,allClient,nbTotalClient,nbGroup);
+                    /* for(int i=0;i<nbGroup;i++){
+                         printf("Group: %s \nClients:", listGroup[i].name);
+                        for(int y=0; y<listGroup[i].nbMembers;y++){
+                           printf("%s ", listGroup[i].members[y]->name);
+                        }
+                        printf("\n");
+                     }*/
                      break;
                   case 4: //Add
                      
@@ -237,30 +244,6 @@ static void remove_client(Client **clients, int to_remove, int *actual)
    memmove(clients + to_remove, clients + to_remove + 1, (*actual - to_remove - 1) * sizeof(Client*));
    /* number client - 1 */
    (*actual)--;
-}
-
-void sendedText(const char *buffer, int indexCommand, char *text){
-   char message[BUF_SIZE];
-   int indexText=0;
-   message[0] = 0;
-   while(buffer[indexCommand] != '\0'){
-      message[indexText] = buffer[indexCommand];
-      indexText++;
-      indexCommand++;
-   }
-   strcpy(text, message);
-}
-
-void NameGroup(const char *buffer, int indexCommand, char *nameGroup){
-   char nGroup[BUF_SIZE];
-   int indexName=0;
-   nGroup[0] = 0;
-   while (buffer[indexCommand] != ' '){
-      nGroup[indexName]=buffer[indexCommand];
-      indexName++;
-      indexCommand++;
-   }
-   strcpy(nameGroup,nGroup);
 }
 
 static int analyse(const char *buffer, char *nameGroup, char *nameClient, char *text, char**listClient, int* nbClients){
@@ -335,15 +318,15 @@ static int analyse(const char *buffer, char *nameGroup, char *nameClient, char *
    return 0;
 }
 
-static int create_group(char *nomGroup, Group *listGroup, int nbMembers, Client *clients, int nbClient, char* clientNames, int nbGroup)
+static int create_group(char *nomGroup, int nbMembers, char**clientNames, Group *listallGroup, Client *allclients, int nbClient,  int nbGroup)
 {
-   Group gr = {.members=(Client **)malloc(sizeof(Client*)*20) ,.nbMembers=0, .historic = (Message *)malloc(sizeof(Message)*20), .nbMessage = 0 };
-                     strcpy(gr.name, nomGroup);
+   Group gr = {.members=(Client **)malloc(sizeof(Client*)*20) ,.nbMembers=nbMembers, .historic = (Message *)malloc(sizeof(Message)*20), .nbMessage = 0 };
+   strcpy(gr.name, nomGroup);
    for(int i=0; i<nbMembers; i++){
-      gr.members[i]=getClient(clientNames[i], clients, nbClient);
-      gr.nbMembers++;
+      gr.members[i]= getClient(clientNames[i], allclients, nbClient);
+      //printf("%s \n",gr.members[i]->name);
    }
-   listGroup[nbGroup]=gr;
+   listallGroup[nbGroup]=gr;
    nbGroup++;
    return nbGroup;
 }
