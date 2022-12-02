@@ -154,7 +154,7 @@ static void app(void)
                   
                   //send_message_to_all_clients(clients, client, actual, buffer, 0);
                   
-                  int command = 0;
+                 /* int command = 0;
                   char nomGr[BUF_SIZE];
                   char nomC[BUF_SIZE];
                   char message[BUF_SIZE];
@@ -181,10 +181,10 @@ static void app(void)
                   default:
                      break;
                   }
-                  printf("Command: %d \n NameGroup: %s \n NameClient:%s \n Message: %s \n", command, nomGr, nomC, message);
+                  printf("Command: %d \n NameGroup: %s \n NameClient:%s \n Message: %s \n", command, nomGr, nomC, message);*/
 
-                  //char nom[]="Laura";
-                  //char nomGr[]="Grp";
+                  char nom[]="Laura";
+                  char nomGr[]="Grp";
                   
                   //Pour executer ce code que 1 fois (c'est du test)
                   if(count==0)  {                
@@ -282,6 +282,7 @@ int analyse(const char *buffer, char *nameGroup, char *nameClient, char *text){
                indexName++;
                indexCommand++;
             }
+            
             strcpy(nameGroup,nGroup);
             indexCommand++;
             sendedText(buffer,indexCommand,text);
@@ -366,29 +367,40 @@ static void send_message_to_group(const char *nomClient, char *nomGroup, Group *
    char message[BUF_SIZE];
    message[0] = 0;
    int groupFound =0;
+   int isMember =0;
+   Client *clientI = getClient(nomClient,clients,nbClient);;
    for( int i =0; i<nbGroup; i++){
       const char * nomGroupI = listGroup[i].name;
-      groupFound = 1;
+      
       if(strcmp(nomGroupI, nomGroup)==0){
+         groupFound = 1;
          
-         // update la conversation
-         Message newMsg = { .sender = getClient(nomClient,clients,nbClient)};
-         time ( &newMsg.date );
-         strcpy(newMsg.text, buffer);
-         listGroup[i].historic[listGroup[i].nbMessage] = newMsg;
-         listGroup[i].nbMessage=listGroup[i].nbMessage+1;
-         
+         for(int index=0; index<listGroup[i].nbMembers; index++){
+            const char * nomClientI=listGroup[i].members[index]->name;
+            if(strcmp(nomClientI, nomClient)==0){
+               isMember=1;
 
-         for(int j = 0; j < listGroup[i].nbMembers; j++)
-         {
-            /* we don't send message to the sender */
-            if(strcmp(listGroup[i].members[j]->name, nomClient)!=0 && listGroup[i].members[j]->connected == 1 )
-            {  
-               strcpy(message,"(Group) ");
-               strncat(message, nomClient, sizeof message - strlen(message) - 1);
-               strncat(message, " : ", sizeof message - strlen(message) - 1);
-               strncat(message, buffer, sizeof message - strlen(message) - 1);
-               write_client(listGroup[i].members[j]->sock, message);
+               // update la conversation
+               Message newMsg = { .sender = clientI};
+               time ( &newMsg.date );
+               strcpy(newMsg.text, buffer);
+               listGroup[i].historic[listGroup[i].nbMessage] = newMsg;
+               listGroup[i].nbMessage=listGroup[i].nbMessage+1;
+                  
+               for(int j = 0; j < listGroup[i].nbMembers; j++)
+               {
+                  /* we don't send message to the sender */
+                  if(strcmp(listGroup[i].members[j]->name, nomClient)!=0 && listGroup[i].members[j]->connected == 1 )
+                  {  
+                     strcpy(message,"(Group ");
+                     strncat(message, listGroup[i].name, sizeof message - strlen(message) - 1);
+                     strncat(message, ") ", sizeof message - strlen(message) - 1);
+                     strncat(message, nomClient, sizeof message - strlen(message) - 1);
+                     strncat(message, " : ", sizeof message - strlen(message) - 1);
+                     strncat(message, buffer, sizeof message - strlen(message) - 1);
+                     write_client(listGroup[i].members[j]->sock, message);
+                  } 
+               }
             }
          }
       }     
@@ -397,6 +409,11 @@ static void send_message_to_group(const char *nomClient, char *nomGroup, Group *
    //si le groupe n'est pas trouvé
    if(groupFound == 0){
       strcpy(message,"Error : the group doesn't exist");
+      write_client(clientI->sock, message);
+   } else if(!isMember){
+      strcpy(message,"Error: the client isn't a member of the group ");
+      strncat(message, nomGroup, sizeof message - strlen(message) - 1);
+      write_client(clientI->sock, message);
    }
 }
 
