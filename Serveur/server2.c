@@ -277,7 +277,12 @@ int analyse(const char *buffer, char *nameGroup, char *nameClient, char *text){
          if(buffer[indexCommand]=='G' && buffer[indexCommand+1]=='r' &&  buffer[indexCommand+2]=='o' &&  buffer[indexCommand+3]=='u' 
             &&  buffer[indexCommand+4]=='p' && buffer[indexCommand+5]==' ' && buffer[indexCommand+6] == '#'){
             indexCommand = indexCommand + 7;
-            NameGroup(buffer,indexCommand,nameGroup);
+            while (buffer[indexCommand] != ' '){
+               nGroup[indexName]=buffer[indexCommand];
+               indexName++;
+               indexCommand++;
+            }
+            strcpy(nameGroup,nGroup);
             indexCommand++;
             sendedText(buffer,indexCommand,text);
             return 1;
