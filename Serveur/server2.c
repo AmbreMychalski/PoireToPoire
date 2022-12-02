@@ -166,6 +166,13 @@ static void app(void)
                   strcpy(nomC,"");
                   strcpy(nomGr,"");
                   command = analyse(buffer, nomGr, nomC, message,listClient, &nbClient);
+
+                  printf("Command: %d \n NameGroup:%s \n NameClient:%s \n Message: %s\n nbclient: %d \n", command, nomGr, nomC, message,nbClient);
+                  for(int i =0; i<nbClient;i++){
+                     printf(" %s ",listClient[i]);
+                  }
+                  printf("\n");
+
                   switch (command){
                   case 1: //Send Group
                      send_message_to_group(client->name,nomGr,listGroup,nbGroup, buffer, allClient, nbTotalClient);
@@ -184,33 +191,29 @@ static void app(void)
                      }*/
                      break;
                   case 4: //Add
-                     add_client_group("ju","ambre",listGroup,"MyGroup",2,allClient,nbTotalClient);
+                     /* add_client_group("ju","ambre",listGroup,"MyGroup",2,allClient,nbTotalClient);
                      for(int i=0;i<nbGroup;i++){
                          printf("Group: %s \nClients:", listGroup[i].name);
                         for(int y=0; y<listGroup[i].nbMembers;y++){
                            printf("%s ", listGroup[i].members[y]->name);
                         }
                         printf("\n");
-                     }
+                     } */
                      break;
                   case 5: //Remove
-                     remove_client_group("ju", "laura", listGroup, "MyGroup", 2, allClient, nbTotalClient);
+                     /* remove_client_group("ju", "laura", listGroup, "MyGroup", 2, allClient, nbTotalClient);
                      for(int i=0;i<nbGroup;i++){
                          printf("Group: %s \nClients:", listGroup[i].name);
                         for(int y=0; y<listGroup[i].nbMembers;y++){
                            printf("%s ", listGroup[i].members[y]->name);
                         }
                         printf("\n");
-                     }
+                     } */
                      break;
                   default:
                      break;
                   }
-                  printf("Command: %d \n NameGroup:%s \n NameClient:%s \n Message: %s\n nbclient: %d \n", command, nomGr, nomC, message,nbClient);
-                  for(int i =0; i<nbClient;i++){
-                     printf(" %s ",listClient[i]);
-                  }
-                  printf("\n");
+                  
                   //char nom[]="Laura";
                   //char nomGr[]="Grp";
                   
@@ -303,7 +306,7 @@ static int analyse(const char *buffer, char *nameGroup, char *nameClient, char *
          return 2;
       }
       //}
-   } else if (strncmp(buffer,"#Create",6)==0){
+   } else if (strcmp(splitCommand[indexCommand],"#Create")==0){
       printf("created \n");
 
       indexCommand++;      
@@ -319,11 +322,20 @@ static int analyse(const char *buffer, char *nameGroup, char *nameClient, char *
       }      
       return 3;
       
-   } else if (strncmp(buffer,"#Add",4)==0){
+   } else if (strcmp(splitCommand[indexCommand],"#Add")==0){
       printf("add \n");
+      indexCommand++;      
+      strcpy(nameGroup, splitCommand[indexCommand]);
+      indexCommand++;
+      strcpy(nameClient, splitCommand[indexCommand]);
       return 4;
    } else if (strncmp(buffer,"#Remove",7)==0){
       printf("remove \n");
+
+      indexCommand++;      
+      strcpy(nameGroup, splitCommand[indexCommand]);
+      indexCommand++;
+      strcpy(nameClient, splitCommand[indexCommand]);
       return 5;
    } else{
       printf("Ce n'est pas une commande possible \n");
