@@ -193,7 +193,7 @@ static void app(void)
                   //char nom[]="Laura";
                   //char nomGr[]="Grp";
                   
-                  //Pour executer ce code que 1 fois (c'est du test)
+                  /* //Pour executer ce code que 1 fois (c'est du test)
                   if(count==0)  {                
 
                      Group gr = {.members=(Client **)malloc(sizeof(Client*)*20) ,.nbMembers=0, .historic = (Message *)malloc(sizeof(Message)*20), .nbMessage = 0 };
@@ -208,7 +208,7 @@ static void app(void)
                   }
                   
                   //send_message_to_conversation(conversations,client->name,nom,buffer,allClient,&nbConversations,nbTotalClient);
-                  send_message_to_group(client->name,nomGr,listGroup,nbGroup, buffer, allClient, nbTotalClient);
+                  send_message_to_group(client->name,nomGr,listGroup,nbGroup, buffer, allClient, nbTotalClient); */
 
                   //send_message_to_group(group, client, text);
                }
