@@ -184,10 +184,24 @@ static void app(void)
                      }*/
                      break;
                   case 4: //Add
-                     
+                     add_client_group("ju","ambre",listGroup,"MyGroup",2,allClient,nbTotalClient);
+                     for(int i=0;i<nbGroup;i++){
+                         printf("Group: %s \nClients:", listGroup[i].name);
+                        for(int y=0; y<listGroup[i].nbMembers;y++){
+                           printf("%s ", listGroup[i].members[y]->name);
+                        }
+                        printf("\n");
+                     }
                      break;
                   case 5: //Remove
-                  
+                     remove_client_group("ju", "laura", listGroup, "MyGroup", 2, allClient, nbTotalClient);
+                     for(int i=0;i<nbGroup;i++){
+                         printf("Group: %s \nClients:", listGroup[i].name);
+                        for(int y=0; y<listGroup[i].nbMembers;y++){
+                           printf("%s ", listGroup[i].members[y]->name);
+                        }
+                        printf("\n");
+                     }
                      break;
                   default:
                      break;
@@ -370,10 +384,12 @@ static void add_client_group(char *nomClient, char* nameA, Group *listGroup, cha
    message[0] = 0;
    int groupFound=0;
    int clientFound=0;
-   Client *clientI = getClient(nomClient,clients,nbClient);;
+   Client *clientI = getClient(nomClient,clients,nbClient);
+   Client *clientA;
    for(int i=0;i<nbClient;i++){
       if(strcmp(clients[i].name,nameA)==0){
          clientFound=1;
+         clientA=getClient(nameA,clients,nbClient);
       }
    }
    if(clientFound){
@@ -382,7 +398,7 @@ static void add_client_group(char *nomClient, char* nameA, Group *listGroup, cha
          if(strcmp(nomGroupI, nomGroup)==0){
             groupFound=1;
             int nMembers = listGroup[i].nbMembers;
-            listGroup[i].members[nMembers]=clientI;
+            listGroup[i].members[nMembers]=clientA;
             listGroup[i].nbMembers = nMembers + 1;
          }
       }
