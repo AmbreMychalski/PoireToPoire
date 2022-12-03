@@ -156,7 +156,7 @@ static void app(void)
                   
                   //send_message_to_all_clients(clients, client, actual, buffer, 0);
                   
-                 int command = 0;
+                  int command = 0;
                   char nomGr[BUF_SIZE];
                   char nomC[BUF_SIZE];
                   char message[BUF_SIZE];
@@ -209,6 +209,9 @@ static void app(void)
                         }
                         printf("\n");
                      }*/
+                     break;
+                  case 6:
+                     send_message_to_all_clients(clients, *client, actual, message, 0);
                      break;
                   default:
                      break;
@@ -268,7 +271,8 @@ static int analyse(const char *buffer, char *nameGroup, char *nameClient, char *
     #Send #Group #NameGroup blablabla
     #Create #NameGroup nameClient1, nameClient2 
     #Add #NameGroup nameClient
-    #Remove
+    #Remove #NameGroup nameClient
+    #Send #all blablabla
    */
    char nGroup[BUF_SIZE];
    char nClient[BUF_SIZE];
@@ -297,13 +301,18 @@ static int analyse(const char *buffer, char *nameGroup, char *nameClient, char *
          strcpy(text, substr(command,startOfText,strlen(command)-startOfText));
          return 1;
       } else if (countWord>2){
-         
-         strcpy(nameClient,splitCommand[indexCommand]);
-         
-         memmove(nameClient, nameClient+1, strlen(nameClient));
-         size_t startOfText = strlen("#Send ")+strlen(splitCommand[indexCommand]);
-         strcpy(text, substr(command,startOfText,strlen(command)-startOfText));
-         return 2;
+
+         if(strcmp(splitCommand[indexCommand],"#all")==0){
+            size_t startOfText = strlen("#Send #all ");
+            strcpy(text, substr(command,startOfText,strlen(command)-startOfText));
+            return 6;
+         } else {
+            strcpy(nameClient,splitCommand[indexCommand]);
+            memmove(nameClient, nameClient+1, strlen(nameClient));
+            size_t startOfText = strlen("#Send ")+strlen(splitCommand[indexCommand]);
+            strcpy(text, substr(command,startOfText,strlen(command)-startOfText));
+            return 2;
+         }
       }
       //}
    } else if (strcmp(splitCommand[indexCommand],"#Create")==0){
@@ -340,7 +349,7 @@ static int analyse(const char *buffer, char *nameGroup, char *nameClient, char *
       strcpy(nameClient, splitCommand[indexCommand]);
       return 5;
    } else{
-      printf("Ce n'est pas une commande possible \n");
+      printf("It isn't a valid command\n");
    }
 
    return 0;
