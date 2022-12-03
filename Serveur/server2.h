@@ -51,7 +51,10 @@ static int init_connection(void);
 static void end_connection(int sock);
 static int read_client(SOCKET sock, char *buffer);
 static void write_client(SOCKET sock, const char *buffer);
-static void send_message_to_all_clients(Client **clients, Client client, int actual, const char *buffer, char from_server);
+static int analyse(const char *buffer, char *nameGroup, char *nameClient, char *text, char**listClient, int* nbClients);
+static char** str_split(char* a_str, const char a_delim, size_t* size);
+static char *substr(char const *input, size_t start, size_t len);
+static void send_message_to_all_clients(Client **clients, Client sender, int actual, const char *buffer, char from_server);
 static void remove_client(Client **clients, int to_remove, int *actual);
 static void clear_clients(Client **clients, int actual);
 Client * getClient(const char *name, Client *listClient, int nbClient);
@@ -59,4 +62,7 @@ static void send_message_to_conversation(Conversation* listConversation, const c
                                           const char *buffer, Client*clients, int * nbConversations, int nbClient);
 static void send_message_to_group(const char *nomClient, char *nomGroup, Group *listGroup, int nbGroup, const char *buffer, Client*clients, int nbClient);
 static void send_message_from_historic(Client *c, Group *listGroup, int nbGroup, Conversation *listConversation );
+static int create_group(Client *client,char *nomGroup, int nbMembers, char** clientNames, Group *listallGroup, Client *allclients, int nbClient,  int nbGroup);
+static void add_client_group(char *nomClient, char* nameA,Group *listGroup, char *nomGroup, int nbGroup, Client *clients, int nbClient);
+static void remove_client_group(char *nomClient, char* nameD,Group *listGroup, char *nomGroup, int nbGroup, Client *clients, int nbClient);
 #endif /* guard */
