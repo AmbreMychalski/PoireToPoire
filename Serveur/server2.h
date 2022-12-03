@@ -32,6 +32,8 @@ typedef struct in_addr IN_ADDR;
 #define MAX_CLIENTS     100
 #define MAX_ALLCLIENTS     100
 #define MAX_MEM_GROUP     20
+#define MAX_GROUP     50
+#define MAX_CONVERSATION     100
 
 #define BUF_SIZE    1024
 
@@ -52,7 +54,7 @@ static void write_client(SOCKET sock, const char *buffer);
 static void send_message_to_all_clients(Client **clients, Client client, int actual, const char *buffer, char from_server);
 static void remove_client(Client **clients, int to_remove, int *actual);
 static void clear_clients(Client **clients, int actual);
-static Client * getClient(const char *name, Client *listClient, int nbClient);
+Client * getClient(const char *name, Client *listClient, int nbClient);
 static void send_message_to_conversation(Conversation* listConversation, const char* senderName, const char* receiverName, 
                                           const char *buffer, Client*clients, int * nbConversations, int nbClient);
 static void send_message_to_group(const char *nomClient, char *nomGroup, Group *listGroup, int nbGroup, const char *buffer, Client*clients, int nbClient);

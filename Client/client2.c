@@ -81,7 +81,7 @@ static void app(const char *address, const char *name)
          }
          puts(buffer);
       }
-   }
+   } 
 
    end_connection(sock);
 }

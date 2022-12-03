@@ -7,8 +7,8 @@ typedef struct
 {  
    Client *clientA;
    Client *clientB;
-   Message *historic;
    int nbMessage;
+   Message *historic;
 }Conversation;
 
 #endif /* guard */
