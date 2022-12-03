@@ -10,8 +10,8 @@
 # Create a Group
 "#Create #NameOfGroup person1 person2 person3"
 
-# Add Someone to an existing group
+# Add someone to an existing group
 "#Add #NameOfGroup person"
 
-# Remove Someone to an existing group
+# Remove someone to an existing group
 "#Remove #NameOfGroup person"
