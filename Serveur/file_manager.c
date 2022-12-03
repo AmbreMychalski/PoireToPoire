@@ -150,7 +150,7 @@ void load_historic(Group *listGroup, int *nbGroup, Conversation *listConversatio
          fread(&((listGroup)[i].name), BUF_SIZE*sizeof(char), 1, historicGroup);
          fread(&((listGroup)[i].nbMembers), sizeof(int), 1, historicGroup);
          fread(&((listGroup)[i].nbMessage), sizeof(int), 1, historicGroup);
-         (listGroup)[i].members = (Client**)malloc(((listGroup)[i].nbMembers)*sizeof(Client*));
+         (listGroup)[i].members = (Client**)malloc(((listGroup)[i].nbMembers+(listGroup)[i].nbMembers%INCR_MEM_GROUP)*sizeof(Client*));
          for(j=0; j<(listGroup)[i].nbMembers; j++){
             /* (*listGroup)[i].members[j] = (Client*)malloc(sizeof(Client)); 
             fread(&((*listGroup)[i].members[j]->name), BUF_SIZE*sizeof(char), 1, historicGroup); */
@@ -159,7 +159,7 @@ void load_historic(Group *listGroup, int *nbGroup, Conversation *listConversatio
             fread(&(nameActualClient), BUF_SIZE*sizeof(char), 1, historicGroup);
             (listGroup)[i].members[j] = getClient(nameActualClient, allClient, nbTotalClient);
          }
-         (listGroup)[i].historic = (Message*)malloc(((listGroup)[i].nbMessage)*sizeof(Message));
+         (listGroup)[i].historic = (Message*)malloc(((listGroup)[i].nbMessage+listGroup[i].nbMessage%INCR_MEM_MESSAGE)*sizeof(Message));
          for(j=0; j<(listGroup)[i].nbMessage; j++){
             fread(&((listGroup)[i].historic[j].text), BUF_SIZE*sizeof(char), 1, historicGroup);
             /* (*listGroup)[i].historic[j].sender = (Client*)malloc(sizeof(Client)); */
@@ -195,7 +195,7 @@ void load_historic(Group *listGroup, int *nbGroup, Conversation *listConversatio
 
          fread(&((listConversation)[i].nbMessage), sizeof(int), 1, historicConversation);
 
-         (listConversation)[i].historic = (Message*)malloc(((listConversation)[i].nbMessage)*sizeof(Message));
+         (listConversation)[i].historic = (Message*)malloc(((listConversation)[i].nbMessage+listConversation[i].nbMessage%INCR_MEM_MESSAGE)*sizeof(Message));
          for(j=0; j<(listConversation)[i].nbMessage; j++){
             fread(&((listConversation)[i].historic[j].text), BUF_SIZE*sizeof(char), 1, historicConversation);
             /* (*listConversation)[i].historic[j].sender = (Client*)malloc(sizeof(Client)); 

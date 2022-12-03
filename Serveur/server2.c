@@ -159,7 +159,6 @@ static void app(void)
                else
                {
                   
-                  //send_message_to_all_clients(clients, client, actual, buffer, 0);
                   
                   int command = 0;
                   char nomGr[BUF_SIZE];
@@ -373,7 +372,7 @@ static int create_group(Client* client,char *nomGroup, int nbMembers, char**clie
 {
    Group gr = {.members=(Client **)malloc(sizeof(Client*)*INCR_MEM_GROUP) ,.nbMembers=nbMembers, .historic = (Message *)malloc(sizeof(Message)*INCR_MEM_MESSAGE), .nbMessage = 0 };
    strcpy(gr.name, nomGroup);
-   int clientA;
+   int clientA=0;
    for(int i=0; i<nbMembers; i++){
       gr.members[i]= getClient(clientNames[i], allclients, nbClient);
       //printf("%s \n",gr.members[i]->name);
@@ -383,7 +382,7 @@ static int create_group(Client* client,char *nomGroup, int nbMembers, char**clie
          clientA=1;
       }
    }
-   if(!clientA){
+   if(clientA==0){
       gr.members[nbMembers]= client;
       gr.nbMembers=nbMembers+1;
    } 
@@ -630,55 +629,71 @@ static void send_message_to_conversation(Conversation* listConversation, const c
    int i=0;
    Conversation *convActuelle;
 
-   Client *conversationClientA;
-   Client *conversationClientB;
-   while(i<(*nbConversations) && exist==0){
-      conversationClientA=(listConversation[i].clientA);
-      conversationClientB=(listConversation[i].clientB);
-      if((strcmp(senderName, conversationClientA->name)==0 && strcmp(receiverName, conversationClientB->name)==0) 
-      || (strcmp(senderName, conversationClientB->name)==0 && strcmp(receiverName, conversationClientA->name)==0)){
-         exist=1;
-         convActuelle = &(listConversation[i]);
-         printf("conversation already exist\n");
+   Client *receiver = getClient(receiverName,clients,nbClient);
+   Client *sender = getClient(senderName,clients,nbClient);
+   printf("oui\n");
+   if(receiver!= NULL){
+      printf("oui2\n");
+      Client *conversationClientA;
+      Client *conversationClientB;
+      while(i<(*nbConversations) && exist==0){
+         conversationClientA=(listConversation[i].clientA);
+         conversationClientB=(listConversation[i].clientB);
+         if((strcmp(senderName, conversationClientA->name)==0 && strcmp(receiverName, conversationClientB->name)==0) 
+         || (strcmp(senderName, conversationClientB->name)==0 && strcmp(receiverName, conversationClientA->name)==0)){
+            exist=1;
+            convActuelle = &(listConversation[i]);
+            printf("conversation already exist\n");
+         }
+         i++;
+      }
+      // si elle n'existe pas : la créer
+      if(exist==0 && (*nbConversations)<=100){
+         printf("conversation needs to be create\n");
+         Conversation conv = { .clientA = sender, .clientB = receiver, 
+                              .historic = (Message *)malloc(sizeof(Message)*20), .nbMessage = 0 };
+         listConversation[*nbConversations]= conv;
+         convActuelle = &(listConversation[*nbConversations]);
+         (*nbConversations)++;
+      }
+      // update la conversation
+      Message newMsg = { .sender = sender};
+      time ( &newMsg.date );
+      strcpy(newMsg.text, buffer);
+
+      if((convActuelle->nbMessage+1)%INCR_MEM_MESSAGE==0){
+         printf("size of array message is not enough, so it has been dynamically realocated\n");
+         Message *temp = (Message *) malloc(sizeof(Message)*((convActuelle->nbMessage+1)+INCR_MEM_GROUP));
+         for(int j=0; j<convActuelle->nbMessage; j++){
+            temp[j]=convActuelle->historic[j];
+         }
+         free(convActuelle->historic);
+         convActuelle->historic=temp;
+      }
+
+      convActuelle->historic[convActuelle->nbMessage] = newMsg;
+      convActuelle->nbMessage++;
+
+      if (receiver->connected == 1){
+         // envoyer le message au destinataire
+         char message[BUF_SIZE];
+         message[0] = 0;
+         strcpy(message,"");
+         strncpy(message, senderName, BUF_SIZE - 1);
+         strncat(message, " : ", sizeof message - strlen(message) - 1);
+         strncat(message, buffer, sizeof message - strlen(message) - 1);
+         write_client( receiver->sock, message);
       }
    }
-   // si elle n'existe pas : la créer
-   if(exist==0 && (*nbConversations)<=100){
-      printf("conversation needs to be create\n");
-      Conversation conv = { .clientA = getClient(senderName,clients,nbClient), .clientB = getClient(receiverName,clients,nbClient), 
-                           .historic = (Message *)malloc(sizeof(Message)*20), .nbMessage = 0 };
-      listConversation[*nbConversations]= conv;
-      convActuelle = &(listConversation[*nbConversations]);
-      (*nbConversations)++;
-   }
-   // update la conversation
-   Message newMsg = { .sender = getClient(senderName,clients,nbClient)};
-   time ( &newMsg.date );
-   strcpy(newMsg.text, buffer);
-
-   if((convActuelle->nbMessage+1)%INCR_MEM_MESSAGE==0){
-      printf("size of array message is not enough, so it has been dynamically realocated\n");
-      Message *temp = (Message *) malloc(sizeof(Message)*((convActuelle->nbMessage+1)+INCR_MEM_GROUP));
-      for(int j=0; j<convActuelle->nbMessage; j++){
-         temp[j]=convActuelle->historic[j];
-      }
-      free(convActuelle->historic);
-      convActuelle->historic=temp;
-   }
-
-   convActuelle->historic[convActuelle->nbMessage] = newMsg;
-   convActuelle->nbMessage++;
-
-  if (getClient(receiverName,clients,nbClient)->connected == 1){
-      // envoyer le message au destinataire
+   else{
+      printf("oui3\n");
       char message[BUF_SIZE];
       message[0] = 0;
-      strcpy(message,"");
-      strncpy(message, senderName, BUF_SIZE - 1);
-      strncat(message, " : ", sizeof message - strlen(message) - 1);
-      strncat(message, buffer, sizeof message - strlen(message) - 1);
-      write_client( getClient(receiverName,clients,nbClient)->sock, message);
+      strcpy(message,"This person doesn't exist");
+      write_client( sender->sock, message);
    }
+
+   
 }
 
 
