@@ -6,10 +6,10 @@
 typedef struct
 {  
    char name[BUF_SIZE];
-   Client **members;
    int nbMembers ;
-   Message *historic;
    int nbMessage;
+   Client **members;
+   Message *historic;
 }Group;
 
 #endif /* guard */
