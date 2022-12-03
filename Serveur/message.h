@@ -7,7 +7,7 @@ typedef struct
 {  
    char text[BUF_SIZE];
    Client *sender;
-   unsigned long int date;
+   time_t date;
 }Message;
 
 #endif /* guard */

@@ -113,7 +113,7 @@ static void app(void)
                c=&allClient[i];
                c->sock=csock;
 
-               send_message_from_historic(c, listGroup, nbGroup, conversations);
+               send_message_from_historic(c, listGroup, nbGroup, conversations,nbConversations);
             }
          }
 
@@ -178,7 +178,7 @@ static void app(void)
                      send_message_to_group(client->name,nomGr,listGroup,nbGroup, message, allClient, nbTotalClient);
                      break;
                   case 2: //Send Client
-                     send_message_to_conversation(conversations,&clients[i]->name,nomC,message,allClient,&nbConversations,nbTotalClient);
+                     send_message_to_conversation(conversations,clients[i]->name,nomC,message,allClient,&nbConversations,nbTotalClient);
                      break;
                   case 3: //Create
                      nbGroup = create_group(nomGr,nbClient,listClient,listGroup,allClient,nbTotalClient,nbGroup);
@@ -264,7 +264,8 @@ static void remove_client(Client **clients, int to_remove, int *actual)
 }
 
 static int analyse(const char *buffer, char *nameGroup, char *nameClient, char *text, char**listClient, int* nbClients){
-   /*#Send #NameClient blablabla
+   /*
+    #Send #NameClient blablabla
     #Send #Group #NameGroup blablabla
     #Create #NameGroup nameClient1, nameClient2 
     #Add #NameGroup nameClient
@@ -348,7 +349,7 @@ static int analyse(const char *buffer, char *nameGroup, char *nameClient, char *
 
 static int create_group(char *nomGroup, int nbMembers, char**clientNames, Group *listallGroup, Client *allclients, int nbClient,  int nbGroup)
 {
-   Group gr = {.members=(Client **)malloc(sizeof(Client*)*20) ,.nbMembers=nbMembers, .historic = (Message *)malloc(sizeof(Message)*20), .nbMessage = 0 };
+   Group gr = {.members=(Client **)malloc(sizeof(Client*)*INCR_MEM_GROUP) ,.nbMembers=nbMembers, .historic = (Message *)malloc(sizeof(Message)*INCR_MEM_MESSAGE), .nbMessage = 0 };
    strcpy(gr.name, nomGroup);
    for(int i=0; i<nbMembers; i++){
       gr.members[i]= getClient(clientNames[i], allclients, nbClient);
@@ -412,6 +413,15 @@ static void add_client_group(char *nomClient, char* nameA, Group *listGroup, cha
          if(strcmp(nomGroupI, nomGroup)==0){
             groupFound=1;
             int nMembers = listGroup[i].nbMembers;
+            if((nMembers+1)%INCR_MEM_GROUP==0){
+               printf("size of array members is not enough, so it has been dynamically realocated");
+               Client **temp = (Client **) malloc(sizeof(Client*)*((nMembers+1)+INCR_MEM_GROUP));
+               for(int j=0; j<nMembers; j++){
+                  temp[j]=listGroup[i].members[j];
+               }
+               free(listGroup[i].members);
+               listGroup[i].members=temp;
+            }
             listGroup[i].members[nMembers]=clientA;
             listGroup[i].nbMembers = nMembers + 1;
          }
@@ -449,7 +459,7 @@ static void send_message_to_all_clients(Client **clients, Client sender, int act
    }
 }
 
-static void send_message_from_historic(Client *c, Group *listGroup, int nbGroup, Conversation *listConversation ){
+static void send_message_from_historic(Client *c, Group *listGroup, int nbGroup, Conversation *listConversation, int nbConv ){
    char message[BUF_SIZE];
    message[0] = 0;
    for(int i =0; i<nbGroup; i++){
@@ -458,17 +468,39 @@ static void send_message_from_historic(Client *c, Group *listGroup, int nbGroup,
             if(strcmp(listGroup[i].members[j]->name, c->name)==0)
             {
                for(int w=0; w<listGroup[i].nbMessage; w++){
-                  
-                  strcpy(message,"(Group) ");
-                  strncat(message, listGroup[i].historic[w].sender->name, sizeof message - strlen(message) - 1);
-                  strncat(message, " : ", sizeof message - strlen(message) - 1);
-                  strncat(message, listGroup[i].historic[w].text, sizeof message - strlen(message) - 1);
-                  strncat(message, " \n ", sizeof message - strlen(message) - 1);
-                  write_client(c->sock, message);
-                  
+
+                  if(listGroup[i].historic[w].date>c->dateLastCo){
+                     strcpy(message,ctime(&(listGroup[i].historic[w].date)));                  
+                     strncat(message, "(Group ", sizeof message - strlen(message) - 1);
+                     strncat(message, listGroup[i].name, sizeof message - strlen(message) - 1);
+                     strncat(message, ") ", sizeof message - strlen(message) - 1);
+                     strncat(message, listGroup[i].historic[w].sender->name, sizeof message - strlen(message) - 1);
+                     strncat(message, " : ", sizeof message - strlen(message) - 1);
+                     strncat(message, listGroup[i].historic[w].text, sizeof message - strlen(message) - 1);
+                     //strncat(message, " \n ", sizeof message - strlen(message) - 1);
+                     write_client(c->sock, message);
+                  }                                
                }               
             }
          }
+   }
+
+   for(int i =0; i<nbConv; i++){
+      if(strcmp(c->name, listConversation[i].clientA->name)==0
+      || strcmp(c->name, listConversation[i].clientB->name)==0 ){
+            
+         for(int w=0; w<listConversation[i].nbMessage; w++){
+            if(listConversation[i].historic[w].date>c->dateLastCo){
+               strcpy(message,ctime(&(listConversation[i].historic[w].date)));               
+               strncat(message, listConversation[i].historic[w].sender->name, sizeof message - strlen(message) - 1);
+               strncat(message, " : ", sizeof message - strlen(message) - 1);
+               strncat(message, listConversation[i].historic[w].text, sizeof message - strlen(message) - 1);
+               //strncat(message, " \n ", sizeof message - strlen(message) - 1);
+               write_client(c->sock, message);               
+            }  
+         }             
+         
+      }
    }
 }
 
@@ -494,6 +526,18 @@ static void send_message_to_group(const char *nomClient, char *nomGroup, Group *
                Message newMsg = { .sender = clientI};
                time ( &newMsg.date );
                strcpy(newMsg.text, buffer);
+               
+
+               if((listGroup[i].nbMessage+1)%INCR_MEM_MESSAGE==0){
+                  printf("size of array message is not enough, so it has been dynamically realocated\n");
+                  Message *temp = (Message *) malloc(sizeof(Message)*((listGroup[i].nbMessage+1)+INCR_MEM_GROUP));
+                  for(int j=0; j<listGroup[i].nbMessage; j++){
+                     temp[j]=listGroup[i].historic[j];
+                  }
+                  free(listGroup[i].historic);
+                  listGroup[i].historic=temp;
+               }
+
                listGroup[i].historic[listGroup[i].nbMessage] = newMsg;
                listGroup[i].nbMessage=listGroup[i].nbMessage+1;
                   
@@ -559,17 +603,30 @@ static void send_message_to_conversation(Conversation* listConversation, const c
    Message newMsg = { .sender = getClient(senderName,clients,nbClient)};
    time ( &newMsg.date );
    strcpy(newMsg.text, buffer);
+
+   if((convActuelle->nbMessage+1)%INCR_MEM_MESSAGE==0){
+      printf("size of array message is not enough, so it has been dynamically realocated\n");
+      Message *temp = (Message *) malloc(sizeof(Message)*((convActuelle->nbMessage+1)+INCR_MEM_GROUP));
+      for(int j=0; j<convActuelle->nbMessage; j++){
+         temp[j]=convActuelle->historic[j];
+      }
+      free(convActuelle->historic);
+      convActuelle->historic=temp;
+   }
+
    convActuelle->historic[convActuelle->nbMessage] = newMsg;
    convActuelle->nbMessage++;
 
-   // envoyer le message au destinataire
-   char message[BUF_SIZE];
-   message[0] = 0;
-   strcpy(message,"");
-   strncpy(message, senderName, BUF_SIZE - 1);
-   strncat(message, " : ", sizeof message - strlen(message) - 1);
-   strncat(message, buffer, sizeof message - strlen(message) - 1);
-   write_client( getClient(receiverName,clients,nbClient)->sock, message);
+  if (getClient(receiverName,clients,nbClient)->connected == 1){
+      // envoyer le message au destinataire
+      char message[BUF_SIZE];
+      message[0] = 0;
+      strcpy(message,"");
+      strncpy(message, senderName, BUF_SIZE - 1);
+      strncat(message, " : ", sizeof message - strlen(message) - 1);
+      strncat(message, buffer, sizeof message - strlen(message) - 1);
+      write_client( getClient(receiverName,clients,nbClient)->sock, message);
+   }
 }
 
 static int init_connection(void)
