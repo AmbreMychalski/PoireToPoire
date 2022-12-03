@@ -245,7 +245,7 @@ static void app(void)
                   } */
                   
                   //send_message_to_conversation(conversations,client->name,nom,buffer,allClient,&nbConversations,nbTotalClient);
-                  send_message_to_group(client->name,nomGr,listGroup,nbGroup, buffer, allClient, nbTotalClient); */
+                 // send_message_to_group(client->name,nomGr,listGroup,nbGroup, buffer, allClient, nbTotalClient); 
 
                   //send_message_to_group(group, client, text);
                }
