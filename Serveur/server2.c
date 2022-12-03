@@ -396,6 +396,9 @@ static void remove_client_group(char *nomClient, char* nameD, Group *listGroup, 
                listGroup[i].nbMembers = nMembers - 1;
             }
             if(clientFound){
+               strcpy(message,"You have been removed from the group ");
+               strncat(message, listGroup[i].name, sizeof message - strlen(message) - 1);
+               write_client(listGroup[i].members[y]->sock, message);
                listGroup[i].members[y] = listGroup[i].members[y+1];
             }
          }
@@ -432,14 +435,18 @@ static void add_client_group(char *nomClient, char* nameA, Group *listGroup, cha
          if(strcmp(nomGroupI, nomGroup)==0){
             groupFound=1;
             int nMembers = listGroup[i].nbMembers;
-            for(int y=0;i<nMembers;i++){
+            for(int y=0;y<nMembers;y++){
                if(strcmp(listGroup[i].members[y]->name,nameA)==0){
                   clientDuplicate=1;
                }
             }
-            if(!clientDuplicate){
+            if(clientDuplicate == 0){
                listGroup[i].members[nMembers]=clientA;
                listGroup[i].nbMembers = nMembers + 1;
+               strcpy(message,"You have been add to the group ");
+               strncat(message,nomGroup, sizeof message - strlen(message) - 1);
+               write_client(clientA->sock, message);
+
             } else{
                strcpy(message,"The client is already in the group");
                write_client(clientI->sock, message);
