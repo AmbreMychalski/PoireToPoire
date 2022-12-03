@@ -181,7 +181,7 @@ static void app(void)
                      send_message_to_conversation(conversations,&clients[i]->name,nomC,message,allClient,&nbConversations,nbTotalClient);
                      break;
                   case 3: //Create
-                     nbGroup = create_group(nomGr,nbClient,listClient,listGroup,allClient,nbTotalClient,nbGroup);
+                     nbGroup = create_group(client,nomGr,nbClient,listClient,listGroup,allClient,nbTotalClient,nbGroup);
                     /* for(int i=0;i<nbGroup;i++){
                          printf("Group: %s \nClients:", listGroup[i].name);
                         for(int y=0; y<listGroup[i].nbMembers;y++){
@@ -355,14 +355,24 @@ static int analyse(const char *buffer, char *nameGroup, char *nameClient, char *
    return 0;
 }
 
-static int create_group(char *nomGroup, int nbMembers, char**clientNames, Group *listallGroup, Client *allclients, int nbClient,  int nbGroup)
+static int create_group(Client* client,char *nomGroup, int nbMembers, char**clientNames, Group *listallGroup, Client *allclients, int nbClient,  int nbGroup)
 {
    Group gr = {.members=(Client **)malloc(sizeof(Client*)*20) ,.nbMembers=nbMembers, .historic = (Message *)malloc(sizeof(Message)*20), .nbMessage = 0 };
    strcpy(gr.name, nomGroup);
+   int clientA;
    for(int i=0; i<nbMembers; i++){
       gr.members[i]= getClient(clientNames[i], allclients, nbClient);
       //printf("%s \n",gr.members[i]->name);
    }
+   for(int y=0;y<nbMembers;y++){
+      if(strcmp(gr.members[y]->name,client->name)==0){
+         clientA=1;
+      }
+   }
+   if(!clientA){
+      gr.members[nbMembers]= client;
+      gr.nbMembers=nbMembers+1;
+   } 
    listallGroup[nbGroup]=gr;
    nbGroup++;
    return nbGroup;
@@ -407,6 +417,7 @@ static void add_client_group(char *nomClient, char* nameA, Group *listGroup, cha
    message[0] = 0;
    int groupFound=0;
    int clientFound=0;
+   int clientDuplicate=0;
    Client *clientI = getClient(nomClient,clients,nbClient);
    Client *clientA;
    for(int i=0;i<nbClient;i++){
@@ -421,8 +432,19 @@ static void add_client_group(char *nomClient, char* nameA, Group *listGroup, cha
          if(strcmp(nomGroupI, nomGroup)==0){
             groupFound=1;
             int nMembers = listGroup[i].nbMembers;
-            listGroup[i].members[nMembers]=clientA;
-            listGroup[i].nbMembers = nMembers + 1;
+            for(int y=0;i<nMembers;i++){
+               if(strcmp(listGroup[i].members[y]->name,nameA)==0){
+                  clientDuplicate=1;
+               }
+            }
+            if(!clientDuplicate){
+               listGroup[i].members[nMembers]=clientA;
+               listGroup[i].nbMembers = nMembers + 1;
+            } else{
+               strcpy(message,"The client is already in the group");
+               write_client(clientI->sock, message);
+            }
+            
          }
       }
       if(!groupFound){
