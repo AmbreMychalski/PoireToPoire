@@ -7,7 +7,6 @@
 void save_clients(const int nbTotalClient,  Client *allClient){
    FILE *historicClient;
    int i;
-   printf("oui\n");
    historicClient = fopen("historicClient.dat", "w");
    if (historicClient==NULL) {
       fprintf(stderr, "\nError while opening file in save clients\n");
@@ -41,7 +40,6 @@ int load_clients(int *nbTotalClient, Client *allClient){
          printf("nbTotalClient not read\n");
          return 0;
       }
-      printf("nbTotalClient : %d\n", *nbTotalClient);
       
       for(i=0; i<(*nbTotalClient); i++){
          fread(&(allClient[i].name), BUF_SIZE*sizeof(char), 1, historicClient);
@@ -55,9 +53,9 @@ int load_clients(int *nbTotalClient, Client *allClient){
             return 0;
          }
       }
-      for(i=0; i<(*nbTotalClient); i++){
+      /* for(i=0; i<(*nbTotalClient); i++){
          printf("Client n°%d : \n- name : %s\n- dateLastCo : %ld\n- connected : %d\n\n", i, allClient[i].name, allClient[i].dateLastCo, allClient[i].connected);
-      }
+      } */
       fclose (historicClient);
    }
    return 1;
@@ -142,8 +140,6 @@ void load_historic(Group *listGroup, int *nbGroup, Conversation *listConversatio
          strerror(errno);
          printf("nbConversations not read\n");
       }
-
-      printf("nb Group : %d, conversations : %d\n", *nbGroup, *nbConversations);
 
       int i,j; 
       for(i=0; i<(*nbGroup); i++){
