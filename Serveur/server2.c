@@ -235,6 +235,12 @@ static void app(void)
                         write_client(getClient(nomC,allClient,nbTotalClient)->sock,message);
                      }                     
                   break;
+                  case 9:
+                     get_client_from_group(nomGr,  listGroup, nbGroup, client);
+                     break;
+                  case 10:
+                     get_group_from_client(client,  listGroup, nbGroup);
+                     break;
                   default:
                      break;
                   }
@@ -392,11 +398,66 @@ static int analyse(const char *buffer, char *nameGroup, char *nameClient, char *
       strcpy(text,command);
 
       return 8;
-   } else{
+   } 
+   else if (strncmp(buffer,"#Get",4)==0){
+      printf("get \n");
+
+      indexCommand++;
+      if(strcmp(splitCommand[indexCommand], "#memberGroup")==0 && countWord>2){
+         printf("memberGroup \n");
+         indexCommand++;
+         strcpy(nameGroup, splitCommand[indexCommand]);
+         memmove(nameGroup, nameGroup+1, strlen(nameGroup));
+         return 9;
+      } else if(strcmp(splitCommand[indexCommand], "#myGroups")==0){
+         printf("myGroup \n");
+         return 10;   
+      }         
+   } else {
       printf("It isn't a valid command\n");
    }
 
    return 0;
+}
+
+static void get_client_from_group(const char *nomGroup,  Group *listallGroup, const int nbGroup, Client *receiver){
+   int i,j;
+   char message [BUF_SIZE];
+   
+   for(i=0; i<nbGroup; i++){
+      if(strcmp(nomGroup, listallGroup[i].name)==0){
+         strcpy(message,"Members of Group ");
+         strncat(message, nomGroup, sizeof message - strlen(message) - 1);
+         strncat(message," : ", sizeof message - strlen(message) - 1);
+         for(j=0; j<listallGroup[i].nbMembers; j++){
+            printf("Client n°%d : %s\n", j, listallGroup[i].members[j]->name);
+            strncat(message, listallGroup[i].members[j]->name, sizeof message - strlen(message) - 1);
+            strncat(message," ", sizeof message - strlen(message) - 1);
+         }
+         write_client(receiver->sock, message);
+      }
+   }
+}
+
+static void get_group_from_client(Client *client,  Group *listallGroup, const int nbGroup){
+   int i,j;
+   int foundAtLeastOneGroup = 0;
+   char message [BUF_SIZE];
+
+   strcpy(message,"You belong to groups : ");
+   for(i=0; i<nbGroup; i++){
+      for(j=0; j<listallGroup[i].nbMembers; j++){
+         if(strcmp(listallGroup[i].members[j]->name, client->name)==0){
+            //printf("group : %s\n", listallGroup[i].name);
+            strncat(message, listallGroup[i].name, sizeof message - strlen(message) - 1);
+            strncat(message," ", sizeof message - strlen(message) - 1);
+            foundAtLeastOneGroup =1;
+         }
+      }
+   }
+   if(foundAtLeastOneGroup==1){
+      write_client(client->sock, message);
+   }
 }
 
 static int create_group(Client* client,char *nomGroup, int nbMembersRequest, char**clientNames, Group *listallGroup, Client *allclients, int nbClient,  int nbGroup)

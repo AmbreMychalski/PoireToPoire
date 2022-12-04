@@ -68,4 +68,6 @@ static int create_group(Client *client,char *nomGroup, int nbMembers, char** cli
 static void add_client_group(char *nomClient, char* nameA,Group *listGroup, char *nomGroup, int nbGroup, Client *clients, int nbClient);
 static void remove_client_group(char *nomClient, char* nameD,Group *listGroup, char *nomGroup, int nbGroup, Client *clients, int nbClient);
 static void send_file(Client * client,char* receiverName, char* fileName, Client * listClient, int nbClient);
+static void get_client_from_group(const char *nomGroup,  Group *listallGroup, const int nbGroup, Client *receiver);
+static void get_group_from_client(Client *client,  Group *listallGroup, const int nbGroup);
 #endif /* guard */
