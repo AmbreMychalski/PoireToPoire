@@ -50,10 +50,10 @@ static void app(void)
    if(load_clients(&nbTotalClient, allClient)){
       load_historic(listGroup, &nbGroup, conversations, &nbConversations, nbTotalClient, allClient);
    }
-   printf("nb TotalClient : %d\n", nbTotalClient);
+   /* printf("nb TotalClient : %d\n", nbTotalClient);
    for(int i=0; i<nbTotalClient; i++){
       printf("client n°%d, name : %s, dateLastCo : %ld, connected : %d\n", i, allClient[i].name,  allClient[i].dateLastCo,  allClient[i].connected);
-   }
+   } */
    //test variable
    int count =0;
 
@@ -172,10 +172,10 @@ static void app(void)
                   command = analyse(buffer, nomGr, nomC, message,listClient, &nbClient);
 
                   printf("Command: %d \n NameGroup:%s \n NameClient:%s \n Message: %s\n nbclient: %d \n", command, nomGr, nomC, message,nbClient);
-                  for(int i =0; i<nbClient;i++){
+                  /* for(int i =0; i<nbClient;i++){
                      printf(" %s ",listClient[i]);
                   }
-                  printf("\n");
+                  printf("\n"); */
 
                   switch (command){
                   case 1: //Send Group
@@ -253,7 +253,7 @@ static void app(void)
          }
       }
    }
-   printf("nb conv : %d\n", nbConversations);
+   // printf("nb conv : %d\n", nbConversations);
    //printf("nom clientA : %s\n", conversations[0].clientA->name);
    save_clients(nbTotalClient, allClient);
    save_historic(listGroup, nbGroup, conversations, nbConversations);
