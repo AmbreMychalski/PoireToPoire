@@ -35,3 +35,9 @@ comment : the client doesn't need to add his name, he will be automaticaly added
 `#Send #file #NameOfPerson NameOfFile`  
 
 comment : the person has to be connected
+
+## See the members of a given group
+`#Get #memberGroup #NameOfgroup`
+
+## See which group the current client is belonging
+`#Get #myGroups`
