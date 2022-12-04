@@ -325,7 +325,7 @@ static int analyse(const char *buffer, char *nameGroup, char *nameClient, char *
          strcpy(text, substr(command,startOfText,strlen(command)-startOfText));
          return 1;
       } else if (countWord>2){
-         if(strcmp(splitCommand[indexCommand],"#file")==0){
+         if(strcmp(splitCommand[indexCommand],"#file")==0 && countWord>3){
             indexCommand++;
             strcpy(nameClient,splitCommand[indexCommand]);
             memmove(nameClient, nameClient+1, strlen(nameClient));
@@ -399,9 +399,10 @@ static int analyse(const char *buffer, char *nameGroup, char *nameClient, char *
    return 0;
 }
 
-static int create_group(Client* client,char *nomGroup, int nbMembers, char**clientNames, Group *listallGroup, Client *allclients, int nbClient,  int nbGroup)
+static int create_group(Client* client,char *nomGroup, int nbMembersRequest, char**clientNames, Group *listallGroup, Client *allclients, int nbClient,  int nbGroup)
 {
-   Group gr = {.members=(Client **)malloc(sizeof(Client*)*INCR_MEM_GROUP) ,.nbMembers=nbMembers, .historic = (Message *)malloc(sizeof(Message)*INCR_MEM_MESSAGE), .nbMessage = 0 };
+   Group gr = {.members=(Client **)malloc(sizeof(Client*)*INCR_MEM_GROUP) ,.nbMembers=0, 
+               .historic = (Message *)malloc(sizeof(Message)*INCR_MEM_MESSAGE), .nbMessage = 0 };
    strcpy(gr.name, nomGroup);
    int clientA=0;
 
@@ -409,10 +410,17 @@ static int create_group(Client* client,char *nomGroup, int nbMembers, char**clie
    message[0] = 0;
    strcpy(message,"You have been add to the group ");
    strncat(message,nomGroup, sizeof message - strlen(message) - 1);
+   int nbMembers =0;
 
-   for(int i=0; i<nbMembers; i++){
-      gr.members[i]= getClient(clientNames[i], allclients, nbClient);
-      write_client(gr.members[i]->sock, message);
+   for(int i=0; i<nbMembersRequest; i++){
+      Client* temp = getClient(clientNames[i], allclients, nbClient);
+      if(temp !=NULL){
+         gr.members[i] = temp;
+         if(gr.members[i]->connected==1){
+            write_client(gr.members[i]->sock, message);
+         }         
+         nbMembers++;
+      }      
       //printf("%s \n",gr.members[i]->name);
    }
    for(int y=0;y<nbMembers;y++){
@@ -422,9 +430,12 @@ static int create_group(Client* client,char *nomGroup, int nbMembers, char**clie
    }
    if(clientA==0){
       gr.members[nbMembers]= client;
-      write_client(client->sock, message);
-      gr.nbMembers=nbMembers+1;
+      if(client->connected==1){
+         write_client(client->sock, message);
+      }
+      nbMembers++;
    } 
+   gr.nbMembers = nbMembers;
    listallGroup[nbGroup]=gr;
    nbGroup++;
    return nbGroup;
