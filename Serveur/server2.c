@@ -4,6 +4,10 @@
 #include <string.h>
 #include <string.h>
 #include <assert.h>
+#include <sys/stat.h>
+#include <sys/sendfile.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 #include "server2.h"
 #include "client2.h"
@@ -163,19 +167,23 @@ static void app(void)
                   int command = 0;
                   char nomGr[BUF_SIZE];
                   char nomC[BUF_SIZE];
+                  char nameFile[BUF_SIZE];
                   char message[BUF_SIZE];
                   char *listClient[100];
                   int nbClient=0;
+                  Client * receiver;
                   strcpy(message,"");
                   strcpy(nomC,"");
                   strcpy(nomGr,"");
-                  command = analyse(buffer, nomGr, nomC, message,listClient, &nbClient);
-
-                  printf("Command: %d \n NameGroup:%s \n NameClient:%s \n Message: %s\n nbclient: %d \n", command, nomGr, nomC, message,nbClient);
-                  for(int i =0; i<nbClient;i++){
-                     printf(" %s ",listClient[i]);
+                  command = analyse(buffer, nomGr, nomC, message,listClient, &nbClient, nameFile);
+                  if(command!=8){
+                     printf("Command: %d \n NameGroup:%s \n NameClient:%s \n Message: %s\n nbclient: %d \n", command, nomGr, nomC, message,nbClient);
+                     for(int i =0; i<nbClient;i++){
+                        printf(" %s ",listClient[i]);
+                     }
+                     printf("\n");
                   }
-                  printf("\n");
+                  
 
                   switch (command){
                   case 1: //Send Group
@@ -217,48 +225,51 @@ static void app(void)
                   case 6:
                      send_message_to_all_clients(clients, *client, actual, message, 0);
                      break;
+                  case 7:
+                     send_file(client,nomC,nameFile, allClient, nbTotalClient);
+                     break;
+                  case 8:
+                     receiver = getClient(nomC,allClient,nbTotalClient);                    
+                     if(receiver!=NULL && receiver->connected==1){
+                        write_client(getClient(nomC,allClient,nbTotalClient)->sock,message);
+                     }                     
+                  break;
                   default:
                      break;
                   }
-                  
-                  //char nom[]="Laura";
-                  //char nomGr[]="Grp";
-                  
-                  /* //Pour executer ce code que 1 fois (c'est du test)
-                  if(count==0)  {                
-
-                     Group gr = {.members=(Client **)malloc(sizeof(Client*)*20) ,.nbMembers=0, .historic = (Message *)malloc(sizeof(Message)*20), .nbMessage = 0 };
-                     strcpy(gr.name, nomGr);
-                     gr.members[0]=&(allClient[0]);
-                     gr.members[1]=&(allClient[1]);
-                     gr.nbMembers=2;
-                     listGroup[0]=gr;
-                     nbGroup++;
-                     printf("membre group1 : %s\n",allClient[0].name);
-                     Client * cli = &allClient[0];
-                     printf("membre group2 : %s\n",cli->name);
-                     printf("membre group3 : %s\n",(&(allClient[0]))->name);
-                     printf("membre group4 : %s\n",(gr.members[0]->name));
-                     printf("oui1\n");
-                     count++;
-                  } */
-                  
-                  //send_message_to_conversation(conversations,client->name,nom,buffer,allClient,&nbConversations,nbTotalClient);
-                 // send_message_to_group(client->name,nomGr,listGroup,nbGroup, buffer, allClient, nbTotalClient); 
-
-                  //send_message_to_group(group, client, text);
                }
                break;
             }
          }
       }
    }
-   printf("nb conv : %d\n", nbConversations);
-   //printf("nom clientA : %s\n", conversations[0].clientA->name);
    save_clients(nbTotalClient, allClient);
    save_historic(listGroup, nbGroup, conversations, nbConversations);
    clear_clients(clients, actual);
    end_connection(sock);
+}
+
+static void send_file(Client * client,char* receiverName, char* fileName, Client * listClient, int nbClient){
+   Client * receiver = getClient(receiverName,listClient,nbClient);
+   char message[BUF_SIZE];
+   message[0] = 0;
+
+   if(receiver==NULL){
+      strcpy(message,"This person doesn't exist in the system\n");
+      write_client(client->sock, message);
+   }
+   else if(receiver->connected==0){
+      strcpy(message,"This person isn't connected yet\n");
+      write_client(client->sock, message);
+   }
+   else{
+
+      strcpy(message,"#FileBegin ");
+      strncat(message, fileName, sizeof message - strlen(message) - 1);
+      write_client(receiver->sock, message);
+   }
+   
+   
 }
 
 static void clear_clients(Client **clients, int actual)
@@ -278,7 +289,7 @@ static void remove_client(Client **clients, int to_remove, int *actual)
    (*actual)--;
 }
 
-static int analyse(const char *buffer, char *nameGroup, char *nameClient, char *text, char**listClient, int* nbClients){
+static int analyse(const char *buffer, char *nameGroup, char *nameClient, char *text, char**listClient, int* nbClients, char *nameFile){
    /*
     #Send #NameClient blablabla
     #Send #Group #NameGroup blablabla
@@ -302,7 +313,6 @@ static int analyse(const char *buffer, char *nameGroup, char *nameClient, char *
    char ** splitCommand = str_split(buffer,' ', &countWord);
    countWord--;
 
-   printf("la : %s\n", splitCommand[indexCommand]);
    
    if( strcmp(splitCommand[indexCommand],"#Send")==0){
       indexCommand++;
@@ -314,7 +324,16 @@ static int analyse(const char *buffer, char *nameGroup, char *nameClient, char *
          strcpy(text, substr(command,startOfText,strlen(command)-startOfText));
          return 1;
       } else if (countWord>2){
+         if(strcmp(splitCommand[indexCommand],"#file")==0){
+            indexCommand++;
+            strcpy(nameClient,splitCommand[indexCommand]);
+            memmove(nameClient, nameClient+1, strlen(nameClient));
 
+            indexCommand++;
+            strcpy(nameFile,splitCommand[indexCommand]);
+
+            return 7;
+         }
          if(strcmp(splitCommand[indexCommand],"#all")==0){
             size_t startOfText = strlen("#Send #all ");
             strcpy(text, substr(command,startOfText,strlen(command)-startOfText));
@@ -361,6 +380,17 @@ static int analyse(const char *buffer, char *nameGroup, char *nameClient, char *
       indexCommand++;
       strcpy(nameClient, splitCommand[indexCommand]);
       return 5;
+   }
+   else if (strncmp(buffer,"#File",5)==0){            
+      indexCommand++;
+      strcpy(nameClient,splitCommand[indexCommand]);      
+      memmove(nameClient, nameClient+1, strlen(nameClient));
+      
+
+      size_t startOfText = strlen("#Send ")+strlen(splitCommand[indexCommand]);
+      strcpy(text,command);
+
+      return 8;
    } else{
       printf("It isn't a valid command\n");
    }
@@ -426,7 +456,6 @@ static void remove_client_group(char *nomClient, char* nameD, Group *listGroup, 
          write_client(clientI->sock, message);
    }
 }
-
 
 static void add_client_group(char *nomClient, char* nameA, Group *listGroup, char *nomGroup, int nbGroup, Client *clients, int nbClient){
    char message[BUF_SIZE];
@@ -528,7 +557,7 @@ static void send_message_from_historic(Client *c, Group *listGroup, int nbGroup,
                      strncat(message, listGroup[i].historic[w].sender->name, sizeof message - strlen(message) - 1);
                      strncat(message, " : ", sizeof message - strlen(message) - 1);
                      strncat(message, listGroup[i].historic[w].text, sizeof message - strlen(message) - 1);
-                     //strncat(message, " \n ", sizeof message - strlen(message) - 1);
+                     strncat(message, "\n", sizeof message - strlen(message) - 1);
                      write_client(c->sock, message);
                   }                                
                }               
@@ -546,7 +575,7 @@ static void send_message_from_historic(Client *c, Group *listGroup, int nbGroup,
                strncat(message, listConversation[i].historic[w].sender->name, sizeof message - strlen(message) - 1);
                strncat(message, " : ", sizeof message - strlen(message) - 1);
                strncat(message, listConversation[i].historic[w].text, sizeof message - strlen(message) - 1);
-               //strncat(message, " \n ", sizeof message - strlen(message) - 1);
+               strncat(message, " \n ", sizeof message - strlen(message) - 1);
                write_client(c->sock, message);               
             }  
          }             
@@ -631,9 +660,7 @@ static void send_message_to_conversation(Conversation* listConversation, const c
 
    Client *receiver = getClient(receiverName,clients,nbClient);
    Client *sender = getClient(senderName,clients,nbClient);
-   printf("oui\n");
    if(receiver!= NULL){
-      printf("oui2\n");
       Client *conversationClientA;
       Client *conversationClientB;
       while(i<(*nbConversations) && exist==0){
@@ -686,7 +713,6 @@ static void send_message_to_conversation(Conversation* listConversation, const c
       }
    }
    else{
-      printf("oui3\n");
       char message[BUF_SIZE];
       message[0] = 0;
       strcpy(message,"This person doesn't exist");

@@ -53,7 +53,7 @@ static int init_connection(void);
 static void end_connection(int sock);
 static int read_client(SOCKET sock, char *buffer);
 static void write_client(SOCKET sock, const char *buffer);
-static int analyse(const char *buffer, char *nameGroup, char *nameClient, char *text, char**listClient, int* nbClients);
+static int analyse(const char *buffer, char *nameGroup, char *nameClient, char *text, char**listClient, int* nbClients, char *nameFile);
 static char** str_split(char* a_str, const char a_delim, size_t* size);
 static char *substr(char const *input, size_t start, size_t len);
 static void send_message_to_all_clients(Client **clients, Client sender, int actual, const char *buffer, char from_server);
@@ -67,4 +67,5 @@ static void send_message_from_historic(Client *c, Group *listGroup, int nbGroup,
 static int create_group(Client *client,char *nomGroup, int nbMembers, char** clientNames, Group *listallGroup, Client *allclients, int nbClient,  int nbGroup);
 static void add_client_group(char *nomClient, char* nameA,Group *listGroup, char *nomGroup, int nbGroup, Client *clients, int nbClient);
 static void remove_client_group(char *nomClient, char* nameD,Group *listGroup, char *nomGroup, int nbGroup, Client *clients, int nbClient);
+static void send_file(Client * client,char* receiverName, char* fileName, Client * listClient, int nbClient);
 #endif /* guard */

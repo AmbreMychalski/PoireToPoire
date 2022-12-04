@@ -7,7 +7,6 @@
 void save_clients(const int nbTotalClient,  Client *allClient){
    FILE *historicClient;
    int i;
-   printf("oui\n");
    historicClient = fopen("historicClient.dat", "w");
    if (historicClient==NULL) {
       fprintf(stderr, "\nError while opening file in save clients\n");
@@ -47,7 +46,8 @@ int load_clients(int *nbTotalClient, Client *allClient){
          fread(&(allClient[i].name), BUF_SIZE*sizeof(char), 1, historicClient);
          fread(&(allClient[i].dateLastCo), sizeof(time_t), 1, historicClient);
          fread(&(allClient[i].connected), sizeof(int), 1, historicClient);
-         
+         allClient[i].connected =0;
+
          if(fread != 0){
             printf("Contents to file historicClient.dat read successfully\n");
          } else {

@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
+#include <assert.h>
 
 #include "client2.h"
 
@@ -34,6 +35,9 @@ static void app(const char *address, const char *name)
 
    /* send our name */
    write_server(sock, name);
+   int fileMode =0;
+   char nameFile[BUF_SIZE];
+   FILE *received_file;
 
    while(1)
    {
@@ -68,7 +72,15 @@ static void app(const char *address, const char *name)
                buffer[BUF_SIZE - 1] = 0;
             }
          }
-         write_server(sock, buffer);
+
+         if(strncmp(buffer,"#Send #file",11)==0){
+            printf("Send file request\n");
+            send_file(sock, buffer);
+
+         }
+         else{
+            write_server(sock, buffer);
+         }
       }
       else if(FD_ISSET(sock, &rdfs))
       {
@@ -79,11 +91,84 @@ static void app(const char *address, const char *name)
             printf("Server disconnected !\n");
             break;
          }
-         puts(buffer);
+         /* char command[BUF_SIZE];
+         strcpy(command,buffer); 
+         char ** split_command = str_split(command,' '); */
+         if(strncmp(buffer,"#FileBegin",10)==0){    
+            if(fileMode==1){
+               fileMode=0;
+               fclose(received_file);
+            }       
+            char ** split_command = str_split(buffer,' ');
+            strcpy(nameFile, split_command[1]);
+            char filePath[BUF_SIZE];
+            strcpy(filePath,"./file_received/");
+            strncat(filePath, nameFile, sizeof filePath - strlen(filePath) - 1);
+            received_file = fopen(filePath, "w");
+            fileMode=1;
+            printf("File received : %s\n",nameFile);           
+         }
+         else if(strncmp(buffer,"#File",5)==0){            
+            char strToRemove[BUF_SIZE];
+            strcpy(strToRemove,"#File #");
+            strncat(strToRemove, name, sizeof strToRemove - strlen(strToRemove) - 1);
+            strremove(buffer,strToRemove);
+            fprintf(received_file, "%s", buffer);
+         }
+         else{
+            if(fileMode==1){
+               fileMode=0;
+               fclose(received_file);
+            }
+            puts(buffer);
+         }         
       }
    } 
 
    end_connection(sock);
+}
+
+static void send_file(SOCKET sock, char* buffer){
+   
+   int sent_bytes = 0;
+   
+   
+   char message[BUF_SIZE];
+   char fileName[BUF_SIZE];
+   char receiverName [BUF_SIZE];
+   message[0] = 0;
+   
+   char command[BUF_SIZE];
+   strcpy(command,buffer);
+
+   char ** split_command = str_split(buffer,' ');
+   
+   strcpy(fileName,split_command[3]);
+   strcpy(receiverName,split_command[2]);
+
+
+   
+   if(access(fileName, F_OK) == 0){
+      FILE *fp = fopen(fileName, "r");
+      write_server(sock, command);
+
+      char data[BUF_SIZE]= {0};
+      message[0] = 0;
+      while(fgets(data, BUF_SIZE-strlen("#File # ")-strlen(receiverName), fp) != NULL) {
+         strcpy(message,"#File ");
+         strncat(message, receiverName, sizeof message - strlen(message) - 1);
+         strncat(message, " ", sizeof message - strlen(message) - 1);
+         strncat(message, data, sizeof message - strlen(message) - 1);
+         write_server(sock, message);
+         bzero(data, BUF_SIZE);
+      }
+   }
+   else{
+      printf("There was a problem when opening the file\n");
+   }
+   
+
+
 }
 
 static int init_connection(const char *address)
@@ -138,6 +223,7 @@ static int read_server(SOCKET sock, char *buffer)
    return n;
 }
 
+
 static void write_server(SOCKET sock, const char *buffer)
 {
    if(send(sock, buffer, strlen(buffer), 0) < 0)
@@ -145,6 +231,67 @@ static void write_server(SOCKET sock, const char *buffer)
       perror("send()");
       exit(errno);
    }
+}
+
+char** str_split(char* a_str, const char a_delim)
+{
+    char** result    = 0;
+    size_t count     = 0;
+    char* tmp        = a_str;
+    char* last_comma = 0;
+    char delim[2];
+    delim[0] = a_delim;
+    delim[1] = 0;
+
+    /* Count how many elements will be extracted. */
+    while (*tmp)
+    {
+        if (a_delim == *tmp)
+        {
+            count++;
+            last_comma = tmp;
+        }
+        tmp++;
+    }
+
+    /* Add space for trailing token. */
+    count += last_comma < (a_str + strlen(a_str) - 1);
+
+    /* Add space for terminating null string so caller
+       knows where the list of returned strings ends. */
+    count++;
+
+    result = malloc(sizeof(char*) * count);
+
+    if (result)
+    {
+        size_t idx  = 0;
+        char* token = strtok(a_str, delim);
+
+        while (token)
+        {
+            assert(idx < count);
+            *(result + idx++) = strdup(token);
+            token = strtok(0, delim);
+        }
+        assert(idx == count - 1);
+        *(result + idx) = 0;
+    }
+
+    return result;
+}
+
+char *strremove(char *str, const char *sub) {
+    char *p, *q, *r;
+    if (*sub && (q = r = strstr(str, sub)) != NULL) {
+        size_t len = strlen(sub);
+        while ((r = strstr(p = r + len, sub)) != NULL) {
+            memmove(q, p, r - p);
+            q += r - p;
+        }
+        memmove(q, p, strlen(p) + 1);
+    }
+    return str;
 }
 
 int main(int argc, char **argv)

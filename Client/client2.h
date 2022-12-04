@@ -39,5 +39,10 @@ static int init_connection(const char *address);
 static void end_connection(int sock);
 static int read_server(SOCKET sock, char *buffer);
 static void write_server(SOCKET sock, const char *buffer);
+static int receive_file(SOCKET sock, char *bufferReceived);
+static char** str_split(char* a_str, const char a_delim);
+static void send_file(SOCKET sock, char* buffer);
+char *strremove(char *str, const char *sub);
+
 
 #endif /* guard */
