@@ -51,6 +51,7 @@ static void app(void)
    Group *listGroup = (Group *) malloc(MAX_GROUP*sizeof(Group)); 
    Conversation *conversations = (Conversation *) malloc(MAX_CONVERSATION*sizeof(Conversation));
    fd_set rdfs;
+   mkdir("file_received", S_IRWXU);
    if(load_clients(&nbTotalClient, allClient)){
       load_historic(listGroup, &nbGroup, conversations, &nbConversations, nbTotalClient, allClient);
    }
