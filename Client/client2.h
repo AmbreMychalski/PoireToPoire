@@ -41,6 +41,7 @@ static int read_server(SOCKET sock, char *buffer);
 static void write_server(SOCKET sock, const char *buffer);
 static int receive_file(SOCKET sock, char *bufferReceived);
 static char** str_split(char* a_str, const char a_delim);
+static char** str_split_count(char* a_str, const char a_delim, size_t* count);
 static void send_file(SOCKET sock, char* buffer);
 char *strremove(char *str, const char *sub);
 

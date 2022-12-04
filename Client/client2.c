@@ -98,8 +98,10 @@ static void app(const char *address, const char *name)
             if(fileMode==1){
                fileMode=0;
                fclose(received_file);
-            }       
+            }   
+              
             char ** split_command = str_split(buffer,' ');
+            
             strcpy(nameFile, split_command[1]);
             char filePath[BUF_SIZE];
             strcpy(filePath,"./file_received/");
@@ -141,30 +143,35 @@ static void send_file(SOCKET sock, char* buffer){
    char command[BUF_SIZE];
    strcpy(command,buffer);
 
-   char ** split_command = str_split(buffer,' ');
+   size_t count; 
+
+   char ** split_command = str_split_count(buffer,' ',&count);
    
-   strcpy(fileName,split_command[3]);
-   strcpy(receiverName,split_command[2]);
+   if(count>3){
+      strcpy(fileName,split_command[3]);
+      strcpy(receiverName,split_command[2]);
 
+      if(access(fileName, F_OK) == 0){
+         FILE *fp = fopen(fileName, "r");
+         write_server(sock, command);
 
-   
-   if(access(fileName, F_OK) == 0){
-      FILE *fp = fopen(fileName, "r");
-      write_server(sock, command);
-
-      char data[BUF_SIZE]= {0};
-      message[0] = 0;
-      while(fgets(data, BUF_SIZE-strlen("#File # ")-strlen(receiverName), fp) != NULL) {
-         strcpy(message,"#File ");
-         strncat(message, receiverName, sizeof message - strlen(message) - 1);
-         strncat(message, " ", sizeof message - strlen(message) - 1);
-         strncat(message, data, sizeof message - strlen(message) - 1);
-         write_server(sock, message);
-         bzero(data, BUF_SIZE);
+         char data[BUF_SIZE]= {0};
+         message[0] = 0;
+         while(fgets(data, BUF_SIZE-strlen("#File # ")-strlen(receiverName), fp) != NULL) {
+            strcpy(message,"#File ");
+            strncat(message, receiverName, sizeof message - strlen(message) - 1);
+            strncat(message, " ", sizeof message - strlen(message) - 1);
+            strncat(message, data, sizeof message - strlen(message) - 1);
+            write_server(sock, message);
+            bzero(data, BUF_SIZE);
+         }
+      }
+      else{
+         printf("There was a problem when opening the file\n");
       }
    }
    else{
-      printf("There was a problem when opening the file\n");
+      printf("Wrong request\n");
    }
    
 
@@ -278,6 +285,54 @@ char** str_split(char* a_str, const char a_delim)
         *(result + idx) = 0;
     }
 
+    return result;
+}
+
+static char** str_split_count(char* a_str, const char a_delim, size_t* num){
+    char** result    = 0;
+    size_t count     = 0;
+    char* tmp        = a_str;
+    char* last_comma = 0;
+    char delim[2];
+    delim[0] = a_delim;
+    delim[1] = 0;
+
+    /* Count how many elements will be extracted. */
+    while (*tmp)
+    {
+        if (a_delim == *tmp)
+        {
+            count++;
+            last_comma = tmp;
+        }
+        tmp++;
+    }
+
+    /* Add space for trailing token. */
+    count += last_comma < (a_str + strlen(a_str) - 1);
+
+    /* Add space for terminating null string so caller
+       knows where the list of returned strings ends. */
+    count++;
+
+    result = malloc(sizeof(char*) * count);
+
+    if (result)
+    {
+        size_t idx  = 0;
+        char* token = strtok(a_str, delim);
+
+        while (token)
+        {
+            assert(idx < count);
+            *(result + idx++) = strdup(token);
+            token = strtok(0, delim);
+        }
+        assert(idx == count - 1);
+        *(result + idx) = 0;
+    }
+
+    *num = count;
     return result;
 }
 
