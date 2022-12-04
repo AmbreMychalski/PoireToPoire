@@ -9,7 +9,7 @@
 ## Client 
 `./client_ex <IP_ADRESSE> <name>`
 
-# Functionalities
+# Client Functionalities
 
 ## Send message to groupe:
 `#Send #Group #NameOfGroup message`
@@ -41,3 +41,6 @@ comment : the person has to be connected
 
 ## See which group the current client is belonging
 `#Get #myGroups`
+
+# Server Functionalities
+To close the server, enter anything in the keyboard and it will close all the clients connections and save automatically the data.
