@@ -373,8 +373,15 @@ static int create_group(Client* client,char *nomGroup, int nbMembers, char**clie
    Group gr = {.members=(Client **)malloc(sizeof(Client*)*INCR_MEM_GROUP) ,.nbMembers=nbMembers, .historic = (Message *)malloc(sizeof(Message)*INCR_MEM_MESSAGE), .nbMessage = 0 };
    strcpy(gr.name, nomGroup);
    int clientA=0;
+
+   char message[BUF_SIZE];
+   message[0] = 0;
+   strcpy(message,"You have been add to the group ");
+   strncat(message,nomGroup, sizeof message - strlen(message) - 1);
+
    for(int i=0; i<nbMembers; i++){
       gr.members[i]= getClient(clientNames[i], allclients, nbClient);
+      write_client(gr.members[i]->sock, message);
       //printf("%s \n",gr.members[i]->name);
    }
    for(int y=0;y<nbMembers;y++){
@@ -384,6 +391,7 @@ static int create_group(Client* client,char *nomGroup, int nbMembers, char**clie
    }
    if(clientA==0){
       gr.members[nbMembers]= client;
+      write_client(client->sock, message);
       gr.nbMembers=nbMembers+1;
    } 
    listallGroup[nbGroup]=gr;
