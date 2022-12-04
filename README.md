@@ -14,6 +14,8 @@
 ## Send message to groupe:
 `#Send #Group #NameOfGroup message`
 
+
+
 ## Send a private message :
 `#Send #NameOfPerson message`
 
@@ -22,6 +24,7 @@
 
 ## Create a Group
 `#Create #NameOfGroup person1 person2 person3`
+
 comment : the client doesn't need to add his name, he will be automaticaly added to the group
 
 ## Add someone to an existing group
@@ -32,4 +35,5 @@ comment : the client doesn't need to add his name, he will be automaticaly added
 
 ## Send a file to some one
 `#Send #file #NameOfPerson NameOfFile`  
+
 comment : the person has to be connected
