@@ -7,6 +7,9 @@
 # Send a message to everyone:
 "#Send #all message"
 
+# Send a file to someone:
+"#Send #file #NameOfPerson nameOfTheFile"
+
 # Create a Group
 "#Create #NameOfGroup person1 person2 person3"
 
